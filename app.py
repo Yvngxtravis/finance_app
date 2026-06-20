@@ -130,7 +130,6 @@ with tab1:
             st.subheader("📊 Key Performance Ratios (Visuals)")
             col1, col2, col3 = st.columns(3)
             
-            # Sghernna l'hight dial les cercles (height=200 au lieu de 250)
             fig1 = go.Figure(go.Indicator(
                 mode = "gauge+number", value = current_ratio_25,
                 title = {'text': "Current Ratio", 'font': {'size': 16}},
@@ -155,12 +154,8 @@ with tab1:
             fig3.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
             col3.plotly_chart(fig3, use_container_width=True)
 
-            # ==========================================
-            # 🧠 EXPERT SYSTEM: 20 N.B. (10 Positifs / 10 Négatifs)
-            # ==========================================
+            # EXPERT SYSTEM
             st.subheader("💡 Expert Financial Diagnosis")
-            
-            # Base de connaissances
             nb_positifs = [
                 "Excellente gestion de la trésorerie. L'entreprise peut s'auto-financer facilement.",
                 "Forte rentabilité opérationnelle confirmée.",
@@ -181,26 +176,23 @@ with tab1:
                 "Poids de la dette circillante trop lourd par rapport aux liquidités disponibles.",
                 "Dégradation alarmante de la profitabilité. Besoin urgent de revoir le modèle de pricing.",
                 "Besoin urgent d'optimiser les coûts fixes pour stopper l'hémorragie financière.",
-                "Risque de dépendance extrême aux créanciers externes (Banques/Fournisseurs).",
+                "Risque de dépendance extrême aux créanciers externes.",
                 "Faible retour sur investissement des capitaux engagés.",
                 "Structure financière sous tension (Alerte rouge sur la trésorerie)."
             ]
             
-            # Logique d'évaluation
             score_positif = 0
             if current_ratio_25 >= 1.2: score_positif += 1
             if net_margin_25 >= 8.0: score_positif += 1
             if roe_25 >= 12.0: score_positif += 1
             
-            random.seed(int(rev_25)) # Seed basé sur le revenu pour constance
+            random.seed(int(rev_25))
             
             if score_positif >= 2:
-                # Situation Mziana
                 color = "#2ca02c"
                 status = "Situation Financière Favorable (Points Forts)"
-                selected_nbs = random.sample(nb_positifs, 3) # Choisir 3 N.B au hasard
+                selected_nbs = random.sample(nb_positifs, 3)
             else:
-                # Situation Khayba (Fuites)
                 color = "#d62728"
                 status = "Situation Financière Critique (Fuites à corriger)"
                 selected_nbs = random.sample(nb_negatifs, 3)
@@ -262,4 +254,43 @@ with tab3:
         price_changes = np.random.normal(0, volatility, size=60)
         close_prices = base_price + np.cumsum(price_changes)
         open_prices = close_prices - np.random.normal(0, volatility, size=60)
-        high_prices = np.maximum(open_prices, close_prices) + np.abs(np.random.normal(0, volatility*1.2, size=
+        
+        # Split line to avoid copy-paste errors
+        high_noise = np.abs(np.random.normal(0, volatility*1.2, size=60))
+        low_noise = np.abs(np.random.normal(0, volatility*1.2, size=60))
+        
+        high_prices = np.maximum(open_prices, close_prices) + high_noise
+        low_prices = np.minimum(open_prices, close_prices) - low_noise
+        
+        if chart_type == "Candlesticks":
+            fig_market = go.Figure(data=[go.Candlestick(x=dates, open=open_prices, high=high_prices, low=low_prices, close=close_prices,
+                                                        increasing_line_color='#00ff00', decreasing_line_color='#ff0000')])
+        else:
+            fig_market = go.Figure(data=[go.Scatter(x=dates, y=close_prices, mode='lines+markers', line=dict(color='#1f77b4', width=3))])
+            
+        fig_market.update_layout(
+            height=400, 
+            title=f"60-Day Price Movement - {selected_company}",
+            yaxis_title="Price (MAD)", 
+            template="plotly_dark", 
+            xaxis_rangeslider_visible=False,
+            dragmode='pan',
+            margin=dict(l=20, r=20, t=50, b=20)
+        )
+        
+        st.plotly_chart(fig_market, use_container_width=True, config={'scrollZoom': False, 'displayModeBar': False})
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ==========================================
+# FOOTER: BY ELAIDI ZAKARIA
+# ==========================================
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align: center; color: #a0a0a0; font-size: 15px; letter-spacing: 1px; padding-bottom: 20px;'>
+        © 2026 | Automated Financial Analytics Platform | <b>By ELAIDI ZAKARIA</b>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
