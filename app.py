@@ -6,6 +6,7 @@ import numpy as np
 import time
 from datetime import datetime, timedelta
 import random
+import io
 
 # 1. Configuration de la page
 st.set_page_config(page_title="Z.ELAIDI - Financial Analytics Hub", layout="wide", page_icon="📊")
@@ -77,6 +78,18 @@ st.markdown('<div class="content-wrapper">', unsafe_allow_html=True)
 st.title("📊 Financial Analytics & Equity Research Hub")
 st.markdown("---")
 
+# Fonction pour générer le template Excel
+def generate_template():
+    df_template = pd.DataFrame({
+        "Line_Item": ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Inventory", "Total Assets", "Total Equity", "Total Debt"],
+        "2024": [0, 0, 0, 0, 0, 0, 0, 0],
+        "2025": [0, 0, 0, 0, 0, 0, 0, 0]
+    })
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_template.to_excel(writer, index=False)
+    return output.getvalue()
+
 # 3. LIVE MARKET ENGINE
 @st.cache_data(ttl=60)
 def get_live_market_data():
@@ -103,9 +116,21 @@ tab1, tab2, tab3 = st.tabs(["📈 Corporate Financial Analysis", "🏗️ BTP Se
 # ==========================================
 with tab1:
     st.header("🔍 Automated Corporate Financial Analysis")
-    st.markdown("**Upload your company's financial Excel template to automatically generate a visual performance analysis with gauge charts.**")
     
-    uploaded_file = st.file_uploader("Choose an Excel template file (.xlsx)", type=["xlsx"])
+    col_text, col_btn = st.columns([3, 1])
+    with col_text:
+        st.markdown("**Upload your company's financial Excel template to automatically generate a visual performance analysis.**")
+    with col_btn:
+        # Bouton pour télécharger le template officiel
+        st.download_button(
+            label="📥 Télécharger le Template Requis",
+            data=generate_template(),
+            file_name="Financial_Template_Standard.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+    
+    uploaded_file = st.file_uploader("Choose your completed Excel file (.xlsx)", type=["xlsx"])
     
     if uploaded_file is not None:
         try:
@@ -117,7 +142,6 @@ with tab1:
             col_2024 = [c for c in df_finance.columns if '2024' in str(c)][0]
             col_2025 = [c for c in df_finance.columns if '2025' in str(c)][0]
             
-            # --- COLORIZATION DU TABLEAU ---
             st.subheader("📋 Imported Financial Data (Variance Analysis)")
             st.markdown("Les indicateurs en **<span style='color:#00ff00'>Vert</span>** sont des points forts, ceux en **<span style='color:#ff0000'>Rouge</span>** sont des alertes.", unsafe_allow_html=True)
             
@@ -131,111 +155,114 @@ with tab1:
                 item = str(row.name).lower()
                 val = row['YoY Growth (%)']
                 if pd.isna(val): return [''] * len(row)
-                
                 color = 'white'
                 if 'liability' in item or 'debt' in item:
                     color = '#ff0000' if val > 0 else '#00ff00'
                 else:
                     color = '#00ff00' if val > 0 else '#ff0000'
-                    
                 return [f'color: {color}' if col == 'YoY Growth (%)' else '' for col in row.index]
 
             st.dataframe(df_display.style.apply(color_variance, axis=1).format({'YoY Growth (%)': "{:.2f}%"}), use_container_width=True)
-            # -------------------------------
 
-            rev_25 = float(df_finance.loc["Revenue", col_2025])
-            net_25 = float(df_finance.loc["Net Income", col_2025])
-            ca_25 = float(df_finance.loc["Current Assets", col_2025])
-            cl_25 = float(df_finance.loc["Current Liabilities", col_2025])
-            eq_25 = float(df_finance.loc["Total Equity", col_2025])
+            # Vérification stricte des lignes nécessaires
+            required_rows = ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Total Equity"]
+            missing_rows = [row for row in required_rows if row not in df_finance.index]
             
-            current_ratio_25 = ca_25 / cl_25
-            net_margin_25 = (net_25 / rev_25) * 100
-            roe_25 = (net_25 / eq_25) * 100
-            
-            st.subheader("📊 Key Performance Ratios (Visuals)")
-            col1, col2, col3 = st.columns(3)
-            
-            fig1 = go.Figure(go.Indicator(
-                mode = "gauge+number", value = current_ratio_25,
-                title = {'text': "Current Ratio", 'font': {'size': 16}},
-                gauge = {'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}}
-            ))
-            fig1.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
-            col1.plotly_chart(fig1, use_container_width=True)
-            
-            fig2 = go.Figure(go.Indicator(
-                mode = "gauge+number", value = net_margin_25, number = {'suffix': "%"},
-                title = {'text': "Net Margin", 'font': {'size': 16}},
-                gauge = {'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}}
-            ))
-            fig2.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
-            col2.plotly_chart(fig2, use_container_width=True)
-            
-            fig3 = go.Figure(go.Indicator(
-                mode = "gauge+number", value = roe_25, number = {'suffix': "%"},
-                title = {'text': "Return on Equity (ROE)", 'font': {'size': 16}},
-                gauge = {'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}}
-            ))
-            fig3.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
-            col3.plotly_chart(fig3, use_container_width=True)
-
-            # EXPERT SYSTEM
-            st.subheader("💡 Expert Financial Diagnosis")
-            nb_positifs = [
-                "Excellente gestion de la trésorerie. L'entreprise peut s'auto-financer facilement.",
-                "Forte rentabilité opérationnelle confirmée.",
-                "Structure de coûts très bien maîtrisée (Avantage compétitif fort).",
-                "Création de valeur optimale pour les actionnaires (ROE très attractif).",
-                "Forte capacité à honorer les dettes à court terme sans stress de liquidité.",
-                "Marge bénéficiaire nette au-dessus de la norme sectorielle.",
-                "Efficacité remarquable dans la rotation et l'utilisation des actifs.",
-                "Indépendance financière solide face aux chocs du marché.",
-                "Potentiel de croissance organique fort grâce aux réserves générées.",
-                "Gestion rigoureuse et saine des passifs circulants."
-            ]
-            nb_negatifs = [
-                "Fuite de liquidité sévère : Risque imminent d'insolvabilité à court terme.",
-                "Marge nette critique : Les charges absorbent presque la totalité des revenus.",
-                "Destruction de valeur : Le ROE est trop faible pour attirer ou retenir les investisseurs.",
-                "Déséquilibre flagrant du fonds de roulement : Nécessité d'optimiser les stocks et créances.",
-                "Poids de la dette circillante trop lourd par rapport aux liquidités disponibles.",
-                "Dégradation alarmante de la profitabilité. Besoin urgent de revoir le modèle de pricing.",
-                "Besoin urgent d'optimiser les coûts fixes pour stopper l'hémorragie financière.",
-                "Risque de dépendance extrême aux créanciers externes.",
-                "Faible retour sur investissement des capitaux engagés.",
-                "Structure financière sous tension (Alerte rouge sur la trésorerie)."
-            ]
-            
-            score_positif = 0
-            if current_ratio_25 >= 1.2: score_positif += 1
-            if net_margin_25 >= 8.0: score_positif += 1
-            if roe_25 >= 12.0: score_positif += 1
-            
-            random.seed(int(rev_25))
-            
-            if score_positif >= 2:
-                color = "#2ca02c"
-                status = "Situation Financière Favorable (Points Forts)"
-                selected_nbs = random.sample(nb_positifs, 3)
+            if missing_rows:
+                st.error(f"⚠️ Format Invalide : Les lignes suivantes sont manquantes ou mal orthographiées : {', '.join(missing_rows)}. Veuillez télécharger le template requis ci-dessus.")
             else:
-                color = "#d62728"
-                status = "Situation Financière Critique (Fuites à corriger)"
-                selected_nbs = random.sample(nb_negatifs, 3)
+                rev_25 = float(df_finance.loc["Revenue", col_2025])
+                net_25 = float(df_finance.loc["Net Income", col_2025])
+                ca_25 = float(df_finance.loc["Current Assets", col_2025])
+                cl_25 = float(df_finance.loc["Current Liabilities", col_2025])
+                eq_25 = float(df_finance.loc["Total Equity", col_2025])
                 
-            st.markdown(f"""
-            <div class="report-box" style="border-color: {color};">
-                <h4 style="color: {color}; margin-top: 0;">{status}</h4>
-                <ul>
-                    <li><b>N.B:</b> {selected_nbs[0]}</li>
-                    <li><b>N.B:</b> {selected_nbs[1]}</li>
-                    <li><b>N.B:</b> {selected_nbs[2]}</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
+                current_ratio_25 = ca_25 / cl_25
+                net_margin_25 = (net_25 / rev_25) * 100
+                roe_25 = (net_25 / eq_25) * 100
+                
+                st.subheader("📊 Key Performance Ratios (Visuals)")
+                col1, col2, col3 = st.columns(3)
+                
+                fig1 = go.Figure(go.Indicator(
+                    mode = "gauge+number", value = current_ratio_25,
+                    title = {'text': "Current Ratio", 'font': {'size': 16}},
+                    gauge = {'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}}
+                ))
+                fig1.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
+                col1.plotly_chart(fig1, use_container_width=True)
+                
+                fig2 = go.Figure(go.Indicator(
+                    mode = "gauge+number", value = net_margin_25, number = {'suffix': "%"},
+                    title = {'text': "Net Margin", 'font': {'size': 16}},
+                    gauge = {'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}}
+                ))
+                fig2.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
+                col2.plotly_chart(fig2, use_container_width=True)
+                
+                fig3 = go.Figure(go.Indicator(
+                    mode = "gauge+number", value = roe_25, number = {'suffix': "%"},
+                    title = {'text': "Return on Equity (ROE)", 'font': {'size': 16}},
+                    gauge = {'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}}
+                ))
+                fig3.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark")
+                col3.plotly_chart(fig3, use_container_width=True)
+
+                st.subheader("💡 Expert Financial Diagnosis")
+                nb_positifs = [
+                    "Excellente gestion de la trésorerie. L'entreprise peut s'auto-financer facilement.",
+                    "Forte rentabilité opérationnelle confirmée.",
+                    "Structure de coûts très bien maîtrisée (Avantage compétitif fort).",
+                    "Création de valeur optimale pour les actionnaires (ROE très attractif).",
+                    "Forte capacité à honorer les dettes à court terme sans stress de liquidité.",
+                    "Marge bénéficiaire nette au-dessus de la norme sectorielle.",
+                    "Efficacité remarquable dans la rotation et l'utilisation des actifs.",
+                    "Indépendance financière solide face aux chocs du marché.",
+                    "Potentiel de croissance organique fort grâce aux réserves générées.",
+                    "Gestion rigoureuse et saine des passifs circulants."
+                ]
+                nb_negatifs = [
+                    "Fuite de liquidité sévère : Risque imminent d'insolvabilité à court terme.",
+                    "Marge nette critique : Les charges absorbent presque la totalité des revenus.",
+                    "Destruction de valeur : Le ROE est trop faible pour attirer ou retenir les investisseurs.",
+                    "Déséquilibre flagrant du fonds de roulement : Nécessité d'optimiser les stocks et créances.",
+                    "Poids de la dette circillante trop lourd par rapport aux liquidités disponibles.",
+                    "Dégradation alarmante de la profitabilité. Besoin urgent de revoir le modèle de pricing.",
+                    "Besoin urgent d'optimiser les coûts fixes pour stopper l'hémorragie financière.",
+                    "Risque de dépendance extrême aux créanciers externes.",
+                    "Faible retour sur investissement des capitaux engagés.",
+                    "Structure financière sous tension (Alerte rouge sur la trésorerie)."
+                ]
+                
+                score_positif = 0
+                if current_ratio_25 >= 1.2: score_positif += 1
+                if net_margin_25 >= 8.0: score_positif += 1
+                if roe_25 >= 12.0: score_positif += 1
+                
+                random.seed(int(rev_25))
+                
+                if score_positif >= 2:
+                    color = "#2ca02c"
+                    status = "Situation Financière Favorable (Points Forts)"
+                    selected_nbs = random.sample(nb_positifs, 3)
+                else:
+                    color = "#d62728"
+                    status = "Situation Financière Critique (Fuites à corriger)"
+                    selected_nbs = random.sample(nb_negatifs, 3)
+                    
+                st.markdown(f"""
+                <div class="report-box" style="border-color: {color};">
+                    <h4 style="color: {color}; margin-top: 0;">{status}</h4>
+                    <ul>
+                        <li style="color: {color};"><b>N.B:</b> {selected_nbs[0]}</li>
+                        <li style="color: {color};"><b>N.B:</b> {selected_nbs[1]}</li>
+                        <li style="color: {color};"><b>N.B:</b> {selected_nbs[2]}</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+                
         except Exception as e:
-            st.error(f"Error processing file. Ensure it's the right template. Details: {e}")
+            st.error(f"⚠️ Erreur de lecture : Le fichier n'est pas structuré correctement. Veuillez télécharger et utiliser le template.")
 
 # ==========================================
 # TAB 2: EQUITY RESEARCH 
@@ -260,7 +287,7 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================
-# TAB 3: LIVE MARKET CHARTS (Fixed Dates & Options)
+# TAB 3: LIVE MARKET CHARTS (Fixed & Locked)
 # ==========================================
 with tab3:
     st.header("💹 Technical Analysis & Historical Trends")
@@ -308,9 +335,10 @@ with tab3:
             yaxis_title="Price (MAD)", 
             template="plotly_dark", 
             xaxis_rangeslider_visible=False,
-            dragmode='pan',
-            margin=dict(l=20, r=20, t=50, b=20),
-            xaxis=dict(range=[dates[0], dates[-1] + timedelta(days=2)]) 
+            dragmode=False, # <-- HADI HIYA LI KAT-BLOCKI L'ZOOM W L'PAN
+            xaxis=dict(fixedrange=True, range=[dates[0], dates[-1] + timedelta(days=2)]), # Lock X axis
+            yaxis=dict(fixedrange=True), # Lock Y axis
+            margin=dict(l=20, r=20, t=50, b=20)
         )
         
         st.plotly_chart(fig_market, use_container_width=True, config={'scrollZoom': False, 'displayModeBar': False})
