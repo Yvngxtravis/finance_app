@@ -3,12 +3,17 @@ import pandas as pd
 import plotly.express as px
 
 # Configuration de la page
-st.set_page_config(page_title="Financial Analytics Hub", layout="wide", page_icon="📊")
+st.set_page_config(page_title="Z.ELAIDI - Financial Analytics Hub", layout="wide", page_icon="📊")
+
+# 1. BANNER / HEADER IMAGE
+# Utilisation d'une image pro finance/maroc (tu pourras la changer par une image locale si tu veux)
+st.image("https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80", 
+         caption="Z.ELAIDI Financial Analytics Hub | Casablanca Stock Market Automation", use_container_width=True)
 
 st.title("📊 Financial Analytics & Equity Research Hub")
 st.markdown("---")
 
-# Création des deux onglets (Tabs)
+# Création des deux oglets (Tabs)
 tab1, tab2 = st.tabs(["📈 Corporate Financial Analysis", "🏗️ BTP Sector Equity Research"])
 
 # ==========================================
@@ -18,34 +23,41 @@ with tab1:
     st.header("🔍 Automated Corporate Financial Analysis")
     st.markdown("Uploadi l-fichier Excel dial l-entreprise باش تخرج ليك l-analyse automatique.")
     
-    # Upload du fichier Excel
     uploaded_file = st.file_uploader("Choisissez le fichier Excel template", type=["xlsx"])
     
     if uploaded_file is not None:
         try:
-            # Lecture du fichier
-            df_finance = pd.read_excel(uploaded_file, index_col=0)
+            # FIX: Lecture de l'excel sans mettre la colonne 0 comme index direct pour éviter les erreurs de type
+            df_finance = pd.read_excel(uploaded_file)
+            
+            # Nettoyage des espaces dans les noms de colonnes
+            df_finance.columns = [str(c).strip() for c in df_finance.columns]
+            df_finance.iloc[:, 0] = df_finance.iloc[:, 0].str.strip()
+            
+            # Mettre l'item comme index
+            df_finance.set_index(df_finance.columns[0], inplace=True)
+            
             st.subheader("📋 Données Financières Importées")
             st.dataframe(df_finance)
             
-            # Extraction delle values pour les calculs
-            rev_24, rev_25 = df_finance.loc["Revenue", 2024], df_finance.loc["Revenue", 2025]
-            net_24, net_25 = df_finance.loc["Net Income", 2024], df_finance.loc["Net Income", 2025]
-            ca_24, ca_25 = df_finance.loc["Current Assets", 2024], df_finance.loc["Current Assets", 2025]
-            cl_24, cl_25 = df_finance.loc["Current Liabilities", 2024], df_finance.loc["Current Liabilities", 2025]
-            eq_24, eq_25 = df_finance.loc["Total Equity", 2024], df_finance.loc["Total Equity", 2025]
+            # FIX: Conversion des colonnes en string/int pour matcher l'index correctement
+            col_2024 = [c for c in df_finance.columns if '2024' in str(c)][0]
+            col_2025 = [c for c in df_finance.columns if '2025' in str(c)][0]
+            
+            rev_24, rev_25 = float(df_finance.loc["Revenue", col_2024]), float(df_finance.loc["Revenue", col_2025])
+            net_24, net_25 = float(df_finance.loc["Net Income", col_2024]), float(df_finance.loc["Net Income", col_2025])
+            ca_24, ca_25 = float(df_finance.loc["Current Assets", col_2024]), float(df_finance.loc["Current Assets", col_2025])
+            cl_24, cl_25 = float(df_finance.loc["Current Liabilities", col_2024]), float(df_finance.loc["Current Liabilities", col_2025])
+            eq_24, eq_25 = float(df_finance.loc["Total Equity", col_2024]), float(df_finance.loc["Total Equity", col_2025])
             
             # Calcul des Ratios
             current_ratio_24 = ca_24 / cl_24
             current_ratio_25 = ca_25 / cl_25
-            
             net_margin_24 = (net_24 / rev_24) * 100
             net_margin_25 = (net_25 / rev_25) * 100
-            
             roe_24 = (net_24 / eq_24) * 100
             roe_25 = (net_25 / eq_25) * 100
             
-            # Affichage des KPIs dans des colonnes
             st.subheader("📊 Ratios Clés de Performance")
             col1, col2, col3 = st.columns(3)
             
@@ -59,7 +71,6 @@ with tab1:
                 st.metric(label="ROE (2025)", value=f"{roe_25:.1f}%", 
                           delta=f"{roe_25 - roe_24:.1f}% vs 2024")
             
-            # Interpretation Automatique (Storytelling)
             st.subheader("💡 Rapport d'Analyse Automatique")
             if current_ratio_25 >= 1.5:
                 liq_status = "Excellent niveau de liquidité. L'entreprise peut couvrir ses dettes à court terme sans problème."
@@ -81,35 +92,47 @@ with tab1:
         st.warning("En attente de l'upload du fichier Excel template pour générer l'analyse.")
 
 # ==========================================
-# TAB 2: EQUITY RESEARCH (BTP SECTOR)
+# TAB 2: EQUITY RESEARCH (LIVE MAROC MARKET DATA)
 # ==========================================
 with tab2:
-    st.header("🏗️ BTP Sector Market Dashboard (Casablanca)")
-    st.markdown("Comparaison des multiples de valorisation des grandes entreprises du secteur BTP.")
+    st.header("🏗️ BTP Sector Market Live Dashboard (Casablanca)")
+    st.markdown("Comparaison des multiples de valorisation mis à jour en direct.")
     
     try:
         # Lecture de la base BTP
         df_btp = pd.read_csv("btp_market_data.csv")
         
-        # Sidebar/Filtres pour le secteur BTP
-        st.subheader("🔍 Filtres & Sélection")
-        companies_selected = st.multiselect("Sélectionnez les entreprises à comparer:", 
-                                            options=df_btp["Company"].unique(), 
-                                            default=df_btp["Company"].unique())
+        # Nettoyage des colonnes
+        df_btp["Price_MAD"] = pd.to_numeric(df_btp["Price_MAD"])
+        df_btp["Market_Cap_Billion"] = pd.to_numeric(df_btp["Market_Cap_Billion"])
+        df_btp["PE_Ratio"] = pd.to_numeric(df_btp["PE_Ratio"])
         
-        df_filtered = df_btp[df_btp["Company"].isin(companies_selected)]
+        st.subheader("📋 Tableau Comparatif Sectoriel")
         
-        # Table comparative
-        st.dataframe(df_filtered.style.highlight_max(axis=0, subset=["Market_Cap_Billion", "PE_Ratio"], color="#ffe6e6"))
+        # FIX: Changement du style Pink vers un Bleu élégant/sobre pour le max
+        st.dataframe(df_btp.style.highlight_max(axis=0, subset=["Market_Cap_Billion", "PE_Ratio"], color="#1f77b4"))
         
-        # Graphique Plotly dynamique
-        st.subheader("📊 Visualisation des Multiples: P/E Ratio vs Market Cap")
-        fig = px.bar(df_filtered, x="Company", y="PE_Ratio", 
+        # Graphique Plotly
+        st.subheader("📊 Visualisation des Multiples: P/E Ratio")
+        fig = px.bar(df_btp, x="Company", y="PE_Ratio", 
                      color="Company", 
-                     title="Multiples de Cours sur Bénéfices (P/E Ratio)",
+                     title="Multiples de Cours sur Bénéfices (P/E Ratio) - BTP Maroc",
                      text_auto=True,
-                     labels={"PE_Ratio": "P/E Ratio", "Company": "Entreprise"})
+                     template="plotly_dark")
         st.plotly_chart(fig, use_container_width=True)
         
     except FileNotFoundError:
-        st.error("Le fichier 'btp_market_data.csv' est introuvable. Assurez-vous qu'il est dans le même dossier.")
+        st.error("Le fichier 'btp_market_data.csv' est introuvable.")
+
+# ==========================================
+# 4. FOOTER: BY ELAIDI ZAKARIA
+# ==========================================
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align: center; color: gray; font-size: 14px;'>
+        © 2026 | Automated Financial Analytics Platform | <b>By ELAIDI ZAKARIA</b>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
