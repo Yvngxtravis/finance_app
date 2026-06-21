@@ -161,13 +161,12 @@ def get_live_market_data():
         st.error(f"Error loading CSV: {str(e)}")
         return None
 
-# FIXED & ENHANCED PDF GENERATOR (Pro Edition)
 def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_table, sim_data, user_email):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_margins(12, 15, 12) 
     
-    # ---------------- HEADER ----------------
+    # HEADER
     pdf.set_fill_color(139, 0, 0) 
     pdf.rect(0, 0, 210, 40, 'F')
     
@@ -176,7 +175,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
     pdf.set_text_color(255, 255, 255)
     pdf.cell(0, 10, "EQUITY RESEARCH & FINANCIAL REPORT", ln=True, align='C')
     
-    # ---------------- META INFO ----------------
+    # META INFO
     pdf.set_text_color(0, 0, 0)
     pdf.set_y(45)
     pdf.set_font("Arial", 'B', 10)
@@ -186,7 +185,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
     pdf.line(12, 53, 198, 53)
     pdf.ln(8)
     
-    # ---------------- SECTION 1: VARIANCE ----------------
+    # SECTION 1: VARIANCE
     pdf.set_fill_color(240, 240, 240)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 1. Financial Statement Variance Analysis", border=1, ln=True, fill=True)
@@ -209,7 +208,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
         pdf.cell(46, 8, growth_str, border=1, ln=True, align='R')
     pdf.ln(8)
 
-    # ---------------- SECTION 2: RATIOS ----------------
+    # SECTION 2: RATIOS
     pdf.set_font("Arial", 'B', 14)
     pdf.set_fill_color(240, 240, 240)
     pdf.cell(0, 10, " 2. Key Performance Metrics", border=1, ln=True, fill=True)
@@ -234,7 +233,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
             pdf.ln(8)
     pdf.ln(8)
     
-    # ---------------- SECTION 3: DIAGNOSIS ----------------
+    # SECTION 3: DIAGNOSIS
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 3. Expert Diagnosis & Vulnerabilities", border=1, ln=True, fill=True)
     pdf.ln(4)
@@ -243,7 +242,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
         pdf.multi_cell(186, 7, txt=f" \x95 {note}")
     pdf.ln(8)
     
-    # ---------------- SECTION 4: STRATEGY ----------------
+    # SECTION 4: STRATEGY
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 4. Strategic Recommendations (M&A Focus)", border=1, ln=True, fill=True)
     pdf.ln(4)
@@ -267,7 +266,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
         pdf.multi_cell(186, 7, txt=f" \x95 {rec}")
     pdf.ln(8)
     
-    # ---------------- SECTION 5: SENSITIVITY ----------------
+    # SECTION 5: SENSITIVITY
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 5. Sensitivity Simulation & Market Benchmark", border=1, ln=True, fill=True)
     pdf.ln(4)
@@ -288,7 +287,7 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
     pdf.set_text_color(80, 80, 80)
     pdf.multi_cell(186, 6, txt=f"Note: The company's performance was evaluated against the Casablanca Stock Exchange (CSE) BTP sector. The average sector P/E Ratio currently stands at {sector_avg_pe:.2f}x.")
     
-    # ---------------- FOOTER ----------------
+    # FOOTER
     pdf.set_y(-20)
     pdf.set_font("Arial", 'I', 8)
     pdf.set_text_color(150, 150, 150)
@@ -512,17 +511,28 @@ def main_app():
             except Exception as e:
                 st.error(f"⚠️ Error processing file. {str(e)}")
 
-    # --- TAB 2: SECTOR BENCHMARK ---
+    # --- TAB 2: SECTOR BENCHMARK (FIXED CHARTS) ---
     with tab2:
         if df_live is not None:
-            st.dataframe(df_live[["Company", "Live_Price_MAD", "Variation", "PE_Ratio", "Net_Margin_%", "ROE_%"]].style.highlight_max(axis=0, subset=["Net_Margin_%", "ROE_%"], color="#1f77b4"), use_container_width=True)
-            if has_data:
-                st.markdown("---")
-                peers = st.multiselect("Select Competitors:", df_live["Company"].tolist(), default=df_live["Company"].tolist()[:2])
-                if peers:
-                    peer_data = df_live[df_live["Company"].isin(peers)]
-                    comp_df = pd.DataFrame({"Entity": ["Your Company"] + peer_data["Company"].tolist(), "Net Margin (%)": [user_net_margin] + peer_data["Net_Margin_%"].tolist(), "ROE (%)": [user_roe] + peer_data["ROE_%"].tolist()})
-                    st.plotly_chart(px.bar(comp_df, x="Entity", y=["Net Margin (%)", "ROE (%)"], barmode="group", template="plotly_dark"), use_container_width=True)
+            st.dataframe(df_live[["Company", "Price_MAD", "PE_Ratio", "Net_Margin_%", "ROE_%"]].style.highlight_max(axis=0, subset=["Net_Margin_%", "ROE_%"], color="#1f77b4"), use_container_width=True)
+            
+            st.markdown("---")
+            st.subheader("⚖️ Peer Comparison")
+            
+            # The chart now shows even if no data is uploaded!
+            peers = st.multiselect("Select Competitors:", df_live["Company"].tolist(), default=df_live["Company"].tolist()[:3])
+            
+            if peers:
+                peer_data = df_live[df_live["Company"].isin(peers)].copy()
+                
+                if has_data:
+                    user_row = pd.DataFrame({"Company": ["Your Company"], "Net_Margin_%": [user_net_margin], "ROE_%": [user_roe]})
+                    comp_df = pd.concat([user_row, peer_data[["Company", "Net_Margin_%", "ROE_%"]]])
+                else:
+                    comp_df = peer_data[["Company", "Net_Margin_%", "ROE_%"]]
+                
+                fig_comp = px.bar(comp_df, x="Company", y=["Net_Margin_%", "ROE_%"], barmode="group", template="plotly_dark", title="Net Margin & ROE vs Market Peers")
+                st.plotly_chart(fig_comp, use_container_width=True)
 
     # --- TAB 3: M&A DEAL ROOM ---
     with tab3:
@@ -596,7 +606,7 @@ def main_app():
             with c_sel3: chart_type = st.radio("Style:", ["Candlesticks", "Line Chart"], horizontal=True)
             
             num_days = {"1 Month": 30, "3 Months": 90, "6 Months": 180}[time_period]
-            base_price = df_live[df_live["Company"] == selected_company]["Live_Price_MAD"].values[0]
+            base_price = df_live[df_live["Company"] == selected_company]["Live_Price_MAD"].values[0] if "Live_Price_MAD" in df_live else df_live[df_live["Company"] == selected_company]["Price_MAD"].values[0]
             dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=num_days)
             
             np.random.seed(42 + len(selected_company) + num_days)
@@ -615,7 +625,7 @@ def main_app():
             fig_m.update_layout(height=450, title=f"Price Trend - {selected_company} ({time_period})", template="plotly_dark", xaxis_rangeslider_visible=False)
             st.plotly_chart(fig_m, use_container_width=True)
 
-    # --- TAB 6: MY HISTORY (WITH RENAME & DELETE) ---
+    # --- TAB 6: MY HISTORY ---
     with tab6:
         st.header(lang_dict["history_title"])
         hist = get_history(st.session_state.user.id)
@@ -626,7 +636,6 @@ def main_app():
                 session_id = item['id']
                 date_str = item['created_at'][:10]
                 data = json.loads(item['work_data'])
-                # Get session name or set default
                 session_name = data.get('Session_Name', f"Session: {date_str}")
                 
                 with st.expander(f"📊 {session_name}"):
@@ -651,42 +660,33 @@ def main_app():
                                 st.success("Deleted!")
                                 st.rerun()
 
-    # --- TAB 5: ABOUT ---
+    # --- TAB 5: ABOUT (FIXED STREAMLIT NATIVE LAYOUT) ---
     with tab5:
         st.header(lang_dict["about_title"])
         
-        st.markdown("""
-        <div style="background-color: #161a22; border: 1px solid #333; border-left: 5px solid #1f77b4; padding: 30px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-            <div style="display: flex; flex-direction: row; gap: 30px; flex-wrap: wrap;">
-                
-                <div style="flex: 2; min-width: 300px;">
-                    <h2 style="margin-top:0; color: white;">Zakaria Elaidi <span style="color:#b3b3b3; font-weight:300; font-size:1.2rem;">| Financial Analyst & M&A Specialist</span></h2>
-                    <p style="color: #d0d3d4; font-size: 1.05rem; line-height: 1.6;">
-                        Currently pursuing a Master's degree in Finance (Programme Grande École) at <b>ENCG El Jadida</b>, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.
-                    </p>
-                    <p style="color: #d0d3d4; font-size: 1.05rem; line-height: 1.6;">
-                        With a strategic focus on targeting roles in <b>M&A, Investment Banking, and Private Equity</b>, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).
-                    </p>
-                    
-                    <h4 style="color: white; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">Professional Background</h4>
-                    <ul style="color: #d0d3d4; font-size: 1rem; line-height: 1.8;">
-                        <li><b>Consulting Experience:</b> Successfully delivered over 150 financial modeling and analysis projects globally as a freelance consultant.</li>
-                        <li><b>Corporate Exposure:</b> Completed the rigorous KPMG UK Audit Job Simulation and actively preparing for a professional placement at OCP Group.</li>
-                        <li><b>Core Expertise:</b> DCF Valuation, LBO Modeling, Market Finance, Marché des Capitaux, and Financial Statement Analysis.</li>
-                    </ul>
-                </div>
-                
-                <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #0e1117; padding: 25px; border-radius: 8px; border-top: 4px solid #c1272d;">
-                    <h3 style="margin-top:0; color:#fff; text-align:center;">Professional Network</h3>
-                    <p style="color:#b3b3b3; font-size: 0.95rem; text-align:center; margin-bottom: 20px;">Open to networking, M&A discussions, and equity research collaborations.</p>
-                    <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; text-align:center; width: 100%; transition: 0.3s;">
-                        Connect on LinkedIn
-                    </a>
-                </div>
-                
+        # Using native columns avoids the Markdown code block bug entirely!
+        st.markdown("<br>", unsafe_allow_html=True)
+        col_text, col_network = st.columns([2, 1], gap="large")
+        
+        with col_text:
+            st.markdown("### Zakaria Elaidi | *Financial Analyst & M&A Specialist*")
+            st.write("Currently pursuing a Master's degree in Finance (Programme Grande École) at **ENCG El Jadida**, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.")
+            st.write("With a strategic focus on targeting roles in **M&A, Investment Banking, and Private Equity**, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).")
+            
+            st.markdown("#### Professional Background")
+            st.markdown("- **Consulting Experience:** Successfully delivered over 150 financial modeling and analysis projects globally as a freelance consultant.")
+            st.markdown("- **Corporate Exposure:** Completed the rigorous KPMG UK Audit Job Simulation and actively preparing for a professional placement at OCP Group.")
+            st.markdown("- **Core Expertise:** DCF Valuation, LBO Modeling, Market Finance, Marché des Capitaux, and Financial Statement Analysis.")
+
+        with col_network:
+            st.markdown("""
+            <div style="background-color: #0e1117; padding: 25px; border-radius: 8px; border-top: 4px solid #c1272d; text-align: center; height: 100%;">
+                <h3 style="margin-top:0; color:#fff;">Professional Network</h3>
+                <p style="color:#b3b3b3; font-size: 0.95rem; margin-bottom: 20px;">Open to networking, M&A discussions, and equity research collaborations.</p>
+                <br>
+                <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: block;">Connect on LinkedIn</a>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 # ==========================================
 # 7. ROUTER
