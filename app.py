@@ -11,40 +11,50 @@ import io
 # 1. Configuration de la page
 st.set_page_config(page_title="Z.ELAIDI - Financial Analytics Hub", layout="wide", page_icon="📊")
 
-# 2. FULL WIDTH BANNER CSS
+# 2. PREMIUM CSS: Police 'Montserrat', Marges centrées, et Banner
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 0rem !important;
-    padding-bottom: 0rem !important;
-    max-width: 100% !important;
-    padding-left: 0rem !important;
-    padding-right: 0rem !important;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Montserrat', sans-serif !important;
 }
+
+/* Centrer le contenu et éviter que ça touche les bords */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 90% !important; /* Ajoute des marges sur les côtés */
+    margin: 0 auto;
+}
+
 .full-width-banner {
     position: relative;
     width: 100%;
-    height: 350px;
+    height: 320px;
     background-image: url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=2500&q=80');
     background-size: cover;
     background-position: center;
     margin-bottom: 2rem;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    border-radius: 15px; /* Bords arrondis pour le style premium */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    overflow: hidden;
 }
+
 .banner-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));
 }
+
 .moroccan-badge {
     position: absolute;
-    bottom: 30px;
-    right: 40px;
+    bottom: 25px;
+    right: 30px;
     background: rgba(15, 15, 15, 0.9);
     color: white;
     padding: 12px 24px;
     border-radius: 8px;
-    font-family: sans-serif;
     font-weight: 600;
     font-size: 16px;
     border-left: 4px solid #c1272d;
@@ -52,10 +62,7 @@ st.markdown("""
     align-items: center;
     gap: 12px;
 }
-.content-wrapper {
-    padding-left: 3rem;
-    padding-right: 3rem;
-}
+
 .report-box {
     padding: 20px;
     border-radius: 10px;
@@ -73,8 +80,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="content-wrapper">', unsafe_allow_html=True)
-
 st.title("📊 Financial Analytics & Equity Research Hub")
 st.markdown("---")
 
@@ -89,7 +94,6 @@ def generate_template():
         df_template.to_excel(writer, index=False)
     return output.getvalue()
 
-# 3. LIVE MARKET ENGINE
 @st.cache_data(ttl=60)
 def get_live_market_data():
     try:
@@ -108,7 +112,8 @@ def get_live_market_data():
 
 df_live = get_live_market_data()
 
-tab1, tab2, tab3 = st.tabs(["📈 Corporate Financial Analysis", "🏗️ BTP Sector Equity Research", "💹 Live Market Charts (MASI)"])
+# Ajout d'un 4ème Tab pour "About"
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Corporate Financial Analysis", "🏗️ BTP Sector Equity Research", "💹 Live Market Charts (MASI)", "👤 About the Creator"])
 
 # ==========================================
 # TAB 1: AUTOMATED FINANCIAL ANALYSIS 
@@ -166,7 +171,7 @@ with tab1:
             missing_rows = [row for row in required_rows if row not in df_finance.index]
             
             if missing_rows:
-                st.error(f"⚠️ Format Invalide : Les lignes suivantes sont manquantes ou mal orthographiées : {', '.join(missing_rows)}. Veuillez télécharger le template requis ci-dessus.")
+                st.error(f"⚠️ Format Invalide : Lignes manquantes : {', '.join(missing_rows)}. Veuillez télécharger le template requis ci-dessus.")
             else:
                 rev_25 = float(df_finance.loc["Revenue", col_2025])
                 net_25 = float(df_finance.loc["Net Income", col_2025])
@@ -207,28 +212,28 @@ with tab1:
 
                 st.subheader("💡 Expert Financial Diagnosis")
                 nb_positifs = [
-                    "Excellente gestion de la trésorerie. L'entreprise peut s'auto-financer facilement.",
+                    "Excellente gestion de la trésorerie. L'entreprise peut s'auto-financer.",
                     "Forte rentabilité opérationnelle confirmée.",
-                    "Structure de coûts très bien maîtrisée (Avantage compétitif fort).",
-                    "Création de valeur optimale pour les actionnaires (ROE très attractif).",
-                    "Forte capacité à honorer les dettes à court terme sans stress de liquidité.",
+                    "Structure de coûts très bien maîtrisée (Avantage compétitif).",
+                    "Création de valeur optimale pour les actionnaires.",
+                    "Forte capacité à honorer les dettes à court terme.",
                     "Marge bénéficiaire nette au-dessus de la norme sectorielle.",
-                    "Efficacité remarquable dans la rotation et l'utilisation des actifs.",
+                    "Efficacité remarquable dans l'utilisation des actifs.",
                     "Indépendance financière solide face aux chocs du marché.",
-                    "Potentiel de croissance organique fort grâce aux réserves générées.",
+                    "Potentiel de croissance organique fort.",
                     "Gestion rigoureuse et saine des passifs circulants."
                 ]
                 nb_negatifs = [
-                    "Fuite de liquidité sévère : Risque imminent d'insolvabilité à court terme.",
-                    "Marge nette critique : Les charges absorbent presque la totalité des revenus.",
-                    "Destruction de valeur : Le ROE est trop faible pour attirer ou retenir les investisseurs.",
-                    "Déséquilibre flagrant du fonds de roulement : Nécessité d'optimiser les stocks et créances.",
-                    "Poids de la dette circillante trop lourd par rapport aux liquidités disponibles.",
-                    "Dégradation alarmante de la profitabilité. Besoin urgent de revoir le modèle de pricing.",
-                    "Besoin urgent d'optimiser les coûts fixes pour stopper l'hémorragie financière.",
+                    "Fuite de liquidité sévère : Risque imminent d'insolvabilité.",
+                    "Marge nette critique : Les charges absorbent presque tous les revenus.",
+                    "Destruction de valeur : Le ROE est trop faible.",
+                    "Déséquilibre flagrant du fonds de roulement.",
+                    "Poids de la dette circillante trop lourd.",
+                    "Dégradation alarmante de la profitabilité.",
+                    "Besoin urgent d'optimiser les coûts fixes.",
                     "Risque de dépendance extrême aux créanciers externes.",
                     "Faible retour sur investissement des capitaux engagés.",
-                    "Structure financière sous tension (Alerte rouge sur la trésorerie)."
+                    "Structure financière sous tension (Alerte trésorerie)."
                 ]
                 
                 score_positif = 0
@@ -259,10 +264,10 @@ with tab1:
                 """, unsafe_allow_html=True)
                 
         except Exception as e:
-            st.error(f"⚠️ Erreur de lecture : Le fichier n'est pas structuré correctement. Veuillez télécharger et utiliser le template.")
+            st.error(f"⚠️ Erreur de lecture : Veuillez utiliser le template requis.")
 
 # ==========================================
-# TAB 2: EQUITY RESEARCH (Chart Fixed)
+# TAB 2: EQUITY RESEARCH 
 # ==========================================
 with tab2:
     st.header(f"🏗️ BTP Sector Live Dashboard")
@@ -282,16 +287,11 @@ with tab2:
                      title="Live Stock Prices (MAD) & Intraday Variation", 
                      color_continuous_scale="RdYlGn", template="plotly_dark")
         
-        # Disable Zoom/Pan on Bar Chart to prevent distortion
-        fig.update_layout(
-            dragmode=False,
-            xaxis=dict(fixedrange=True),
-            yaxis=dict(fixedrange=True)
-        )
+        fig.update_layout(dragmode=False, xaxis=dict(fixedrange=True), yaxis=dict(fixedrange=True))
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': False, 'displayModeBar': False})
 
 # ==========================================
-# TAB 3: LIVE MARKET CHARTS (Zoom Enabled)
+# TAB 3: LIVE MARKET CHARTS (Fix Zoom Y-Axis)
 # ==========================================
 with tab3:
     st.header("💹 Technical Analysis & Historical Trends")
@@ -314,16 +314,13 @@ with tab3:
         dates = pd.date_range(end=today, periods=num_days)
         
         np.random.seed(42 + len(selected_company) + num_days)
-        
         volatility = base_price * 0.05
         price_changes = np.random.normal(0, volatility, size=num_days)
         
         close_prices = base_price - np.cumsum(price_changes[::-1])[::-1] 
         open_prices = close_prices - np.random.normal(0, volatility, size=num_days)
-        
         high_noise = np.abs(np.random.normal(0, volatility*1.2, size=num_days))
         low_noise = np.abs(np.random.normal(0, volatility*1.2, size=num_days))
-        
         high_prices = np.maximum(open_prices, close_prices) + high_noise
         low_prices = np.minimum(open_prices, close_prices) - low_noise
         
@@ -339,23 +336,53 @@ with tab3:
             yaxis_title="Price (MAD)", 
             template="plotly_dark", 
             xaxis_rangeslider_visible=False,
-            dragmode='zoom', # Enable zoom mode
+            dragmode='zoom', 
             margin=dict(l=20, r=20, t=50, b=20),
-            xaxis=dict(range=[dates[0], dates[-1] + timedelta(days=2)]) 
+            xaxis=dict(range=[dates[0], dates[-1] + timedelta(days=2)], fixedrange=False), 
+            yaxis=dict(fixedrange=True) # HADI HIYA LI KAT-7BESS L'MOUCHKIL DIAL Y-AXIS SQUASHING!
         )
         
         st.plotly_chart(fig_market, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': True})
 
-st.markdown('</div>', unsafe_allow_html=True)
+# ==========================================
+# TAB 4: ABOUT THE CREATOR
+# ==========================================
+with tab4:
+    st.header("👤 About the Creator & Platform")
+    
+    col_about1, col_about2 = st.columns([2, 1])
+    
+    with col_about1:
+        st.markdown("""
+        ### **Zakaria Elaidi** *Financial Analyst & Strategist*
+        
+        Zakaria is a dynamic financial analyst currently specializing in Finance and Management at the prestigious **Ecole Nationale de Commerce et de Gestion (ENCG) in El Jadida**. 
+        
+        With an unwavering passion for corporate finance and data analytics, Zakaria brings significant real-world experience to the table. As a freelance financial analyst, he has successfully delivered over **150 financial modeling and consulting projects** for a diverse range of international clients.
+        
+        **About this Platform:**
+        This platform was built to bridge the gap between traditional financial assessment and modern data automation. By leveraging Python and interactive data visualization, this tool transforms hours of manual Excel crunching into instant, actionable insights. 
+        """)
+        st.info("💡 **Core Expertise:** Equity Research, Financial Modeling, Data Automation, Corporate Strategy.")
+    
+    with col_about2:
+        st.markdown("""
+        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid #c1272d;">
+            <h3 style="margin-top:0;">Let's Connect</h3>
+            <p>Interested in financial consulting, equity research, or a potential collaboration?</p>
+            <br>
+            <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Connect on LinkedIn</a>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================
-# FOOTER: BY ELAIDI ZAKARIA
+# FOOTER
 # ==========================================
 st.markdown("---")
 st.markdown(
     """
     <div style='text-align: center; color: #a0a0a0; font-size: 15px; letter-spacing: 1px; padding-bottom: 20px;'>
-        © 2026 | Automated Financial Analytics Platform | <b>By ELAIDI ZAKARIA</b>
+        © 2026 | Automated Financial Analytics Platform | <b>Designed & Built by ELAIDI ZAKARIA</b>
     </div>
     """, 
     unsafe_allow_html=True
