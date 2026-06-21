@@ -41,21 +41,6 @@ st.markdown("""
     .banner-content { position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }
     .moroccan-badge { display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }
     
-    /* Clickable Cards Configuration */
-    a { text-decoration: none !important; }
-    .nav-card { padding: 20px; border-radius: 8px; height: 130px; margin-bottom: 20px; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
-    .nav-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.4); }
-    
-    .card-blue { background-color: #0e1621; border-left: 4px solid #1f77b4; }
-    .card-green { background-color: #0d1a10; border-left: 4px solid #2ca02c; }
-    .card-purple { background-color: #1a0f24; border-left: 4px solid #9467bd; }
-    .card-red { background-color: #240f0f; border-left: 4px solid #d62728; }
-    .card-orange { background-color: #24180f; border-left: 4px solid #ff7f0e; }
-    .card-teal { background-color: #0f2424; border-left: 4px solid #17becf; }
-    
-    .card-title { margin: 0; font-size: 1.1rem; font-weight: bold; }
-    .card-text { color: #b3b3b3; font-size: 0.85rem; margin-top: 8px; line-height: 1.4; }
-    
     /* Custom Overview Dashboard */
     .overview-container { display: flex; justify-content: space-around; background-color: #161a22; padding: 20px; border-radius: 8px; border-top: 3px solid #333; margin-bottom: 30px;}
     .overview-item { text-align: center; }
@@ -125,18 +110,15 @@ if st.session_state.user is None:
 
 else:
     # -----------------------------------------------------
-    # CLEAN & MINIMALIST DASHBOARD
+    # NATIVE STREAMLIT DASHBOARD (Session-Safe)
     # -----------------------------------------------------
     
-    # --- NEW: TOP HEADER & USER OPTIONS ---
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
-        # Show a personalized welcome message based on the email
         user_name = st.session_state.user.email.split('@')[0].capitalize()
         st.markdown(f"<h4 style='color: #e0e0e0; margin-top: 10px;'>👋 Welcome back, {user_name}</h4>", unsafe_allow_html=True)
     
     with top_col2:
-        # Create a dropdown popover for settings
         with st.popover("⚙️ Settings & Profile", use_container_width=True):
             st.markdown("**User Profile**")
             st.write(f"📧 {st.session_state.user.email}")
@@ -148,16 +130,13 @@ else:
             st.divider()
             
             st.markdown("**System**")
-            if st.button("📖 Platform Docs", use_container_width=True):
-                st.info("Documentation feature coming soon.")
-                
+            if st.button("📖 Platform Docs", use_container_width=True): st.info("Documentation feature coming soon.")
             if st.button("🚪 Terminate Session", type="primary", use_container_width=True):
                 supabase.auth.sign_out()
                 st.session_state.user = None
                 st.rerun()
                 
     st.markdown("<br>", unsafe_allow_html=True)
-    # -----------------------------------------------------
 
     st.markdown("""
     <div class="full-width-banner">
@@ -170,7 +149,6 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Custom HTML Overview to fix truncation and spacing
     df_dash = get_dashboard_data()
     if df_dash is not None:
         avg_pe = df_dash["PE_Ratio"].mean()
@@ -195,69 +173,46 @@ else:
         """, unsafe_allow_html=True)
     
     st.markdown("### 🚀 Quick Navigation Modules")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # ROW 1 OF CLICKABLE CARDS
+    # ROW 1 OF NATIVE CARDS
     c1, c2, c3 = st.columns(3)
     
     with c1:
-        st.markdown("""
-        <a href="Corporate_Analysis" target="_self">
-            <div class='nav-card card-blue'>
-                <p class='card-title' style='color:#1f77b4;'>📉 Corporate Analysis</p>
-                <p class='card-text'>Upload Excel models, run variance analysis, and generate investment teasers.</p>
-            </div>
-        </a>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='color:#1f77b4; margin-top:0;'>📉 Corporate Analysis</h4>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>Upload Excel models, run variance analysis, and generate investment teasers.</p>", unsafe_allow_html=True)
+            if st.button("Launch Module", key="b1", use_container_width=True): st.switch_page("pages/1_Corporate_Analysis.py")
             
     with c2:
-        st.markdown("""
-        <a href="BTP_Benchmark" target="_self">
-            <div class='nav-card card-green'>
-                <p class='card-title' style='color:#2ca02c;'>⚖️ Sector Benchmark</p>
-                <p class='card-text'>Compare target operational margins, liquidity, and ROE against Moroccan peers.</p>
-            </div>
-        </a>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='color:#2ca02c; margin-top:0;'>⚖️ Sector Benchmark</h4>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>Compare target operational margins, liquidity, and ROE against Moroccan peers.</p>", unsafe_allow_html=True)
+            if st.button("Launch Module", key="b2", use_container_width=True): st.switch_page("pages/2_BTP_Benchmark.py")
             
     with c3:
-        st.markdown("""
-        <a href="MA_Valuation" target="_self">
-            <div class='nav-card card-purple'>
-                <p class='card-title' style='color:#9467bd;'>💼 M&A Deal Room</p>
-                <p class='card-text'>Execute LBO Quick-Models, Advanced CAPM, and Monte Carlo DCF simulations.</p>
-            </div>
-        </a>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='color:#9467bd; margin-top:0;'>💼 M&A Deal Room</h4>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>Execute LBO Quick-Models, Advanced CAPM, and Monte Carlo DCF simulations.</p>", unsafe_allow_html=True)
+            if st.button("Launch Module", key="b3", use_container_width=True): st.switch_page("pages/3_MA_Valuation.py")
     
-    # ROW 2 OF CLICKABLE CARDS
+    # ROW 2 OF NATIVE CARDS
     c4, c5, c6 = st.columns(3)
     
     with c4:
-        st.markdown("""
-        <a href="Live_Charts" target="_self">
-            <div class='nav-card card-red'>
-                <p class='card-title' style='color:#d62728;'>💹 Live Charts</p>
-                <p class='card-text'>Track real-time market trends, volatility, and historical pricing data.</p>
-            </div>
-        </a>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='color:#d62728; margin-top:0;'>💹 Live Charts</h4>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>Track real-time market trends, volatility, and historical pricing data.</p>", unsafe_allow_html=True)
+            if st.button("Launch Module", key="b4", use_container_width=True): st.switch_page("pages/4_Live_Charts.py")
             
     with c5:
-        st.markdown("""
-        <a href="My_History" target="_self">
-            <div class='nav-card card-orange'>
-                <p class='card-title' style='color:#ff7f0e;'>🗄️ My History</p>
-                <p class='card-text'>Access, manage, and download your previously saved analysis sessions.</p>
-            </div>
-        </a>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='color:#ff7f0e; margin-top:0;'>🗄️ My History</h4>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>Access, manage, and download your previously saved analysis sessions.</p>", unsafe_allow_html=True)
+            if st.button("Launch Module", key="b5", use_container_width=True): st.switch_page("pages/6_My_History.py")
             
     with c6:
-        st.markdown("""
-        <a href="About_Creator" target="_self">
-            <div class='nav-card card-teal'>
-                <p class='card-title' style='color:#17becf;'>👤 About Creator</p>
-                <p class='card-text'>Professional profile, academic background, and networking links.</p>
-            </div>
-        </a>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='color:#17becf; margin-top:0;'>👤 About Creator</h4>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>Professional profile, academic background, and networking links.</p>", unsafe_allow_html=True)
+            if st.button("Launch Module", key="b6", use_container_width=True): st.switch_page("pages/5_About_Creator.py")
