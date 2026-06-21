@@ -1,4 +1,4 @@
-import streamlit as st
+
 
 # MUST BE THE FIRST LINE
 st.set_page_config(page_title="Z.ELAIDI - Financial Analytics", layout="wide", page_icon="📊")
@@ -12,28 +12,29 @@ import io
 import json
 import base64
 from fpdf import FPDF
+import streamlit as st
 from supabase import create_client
 
 # ==========================================
-# 1. SUPABASE CONFIGURATION
+# SUPABASE CONFIGURATION
 # ==========================================
-from supabase import create_client, ClientOptions
 
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_KEY"]
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
-# هاد السطور كيعوضو داكشي اللي كان عندك قبل
-supabase = create_client(
-    supabase_url=url, 
-    supabase_key=key,
-    options=ClientOptions(postgrest_client_timeout=10)
-)
+try:
+    supabase = create_client(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    )
+except Exception as e:
+    st.error(f"Supabase initialization failed: {e}")
+    st.stop()
 
 ADMIN_EMAIL = "zakariaelaidi2006@gmail.com"
 
 if "user" not in st.session_state:
     st.session_state.user = None
-
 # ==========================================
 # 2. SAFE CSS
 # ==========================================
@@ -128,24 +129,57 @@ def create_pdf(metrics_dict):
 def auth_ui():
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.5, 1])
+
     with col2:
         st.markdown("<h2 style='text-align: left; color: white; border-top: 4px solid #c1272d; padding-top: 15px;'>SYSTEM ACCESS</h2>", unsafe_allow_html=True)
-        choice = st.radio("Action", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
-        email = st.text_input("Corporate Email", placeholder="email@domain.com")
-        password = st.text_input("Password", type="password", placeholder="••••••••")
-        
+
+        choice = st.radio(
+            "Action",
+            ["Login", "Sign Up"],
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+
+        email = st.text_input(
+            "Corporate Email",
+            placeholder="email@domain.com"
+        )
+
+        password = st.text_input(
+            "Password",
+            type="password",
+            placeholder="••••••••"
+        )
+
         if st.button("Authenticate", use_container_width=True):
             if choice == "Login":
                 try:
-                    res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                    res = supabase.auth.sign_in_with_password(
+                        {
+                            "email": email,
+                            "password": password
+                        }
+                    )
                     st.session_state.user = res.user
                     st.rerun()
-                except Exception as e: st.error(f"Login Error: {str(e)}")
+
+                except Exception as e:
+                    st.error(f"Login Error: {str(e)}")
+
             else:
                 try:
-                    supabase.auth.sign_up({"email": email, "password": password})
-                    st.success("Account created successfully. Switch to 'Login' to enter.")
-                except Exception as e: st.error(f"Sign Up Error: {str(e)}")
+                    supabase.auth.sign_up(
+                        {
+                            "email": email,
+                            "password": password
+                        }
+                    )
+                    st.success(
+                        "Account created successfully. Switch to Login."
+                    )
+
+                except Exception as e:
+                    st.error(f"Sign Up Error: {str(e)}")
 
 # ==========================================
 # 5. MAIN APPLICATION
