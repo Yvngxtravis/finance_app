@@ -88,11 +88,17 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
 .ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
 .ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
-.btn-pdf { background-color: #c1272d; color: white; padding: 15px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; transition: 0.3s; }
-.btn-pdf:hover { background-color: #a02025; color: white; }
+.btn-pdf { background-color: #c1272d; color: white !important; padding: 15px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none !important; font-weight: bold; margin-top: 15px; transition: 0.3s; }
+.btn-pdf:hover { background-color: #a02025; color: white !important; text-decoration: none !important; }
 .glossary-box { background-color: #0e1117; padding: 15px; border-left: 3px solid #f5b041; border-radius: 5px; font-size: 0.9rem; color: #d0d3d4; margin-bottom: 15px; }
 .report-box { padding: 20px; border-radius: 10px; background-color: #161a22; border-left: 5px solid; margin-top: 20px; }
 .metric-box { background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }
+
+/* NEW BANNER CSS */
+.full-width-banner { position: relative; width: 100%; height: 220px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2rem; border-radius: 10px; border-left: 5px solid #c1272d; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+.banner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(193,39,45,0.2) 100%); }
+.banner-content { position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }
+.moroccan-badge { display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,9 +113,23 @@ def save_history(user_id, email, data_dict):
 
 def get_history(user_id):
     try:
-        res = supabase.table("users_history").select("created_at, work_data").eq("user_id", user_id).order("created_at", desc=True).execute()
+        # Added 'id' to the select query to allow editing/deleting specific rows
+        res = supabase.table("users_history").select("id, created_at, work_data").eq("user_id", user_id).order("created_at", desc=True).execute()
         return res.data
     except: return []
+
+def delete_session(session_id):
+    try:
+        supabase.table("users_history").delete().eq("id", session_id).execute()
+        return True
+    except: return False
+
+def update_session_name(session_id, current_data, new_name):
+    try:
+        current_data["Session_Name"] = new_name
+        supabase.table("users_history").update({"work_data": json.dumps(current_data)}).eq("id", session_id).execute()
+        return True
+    except: return False
 
 def generate_template():
     df_template = pd.DataFrame({
@@ -139,13 +159,11 @@ def get_live_market_data():
         return df
     except: return None
 
-# FIXED PDF GENERATOR (Safe Margins and Widths)
 def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_table, sim_data):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_margins(10, 10, 10) # Prevent Horizontal Space Error
+    pdf.set_margins(10, 10, 10)
     
-    # Header
     pdf.set_fill_color(193, 39, 45)
     pdf.rect(0, 0, 210, 35, 'F')
     pdf.set_y(12)
@@ -153,14 +171,12 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
     pdf.set_text_color(255, 255, 255)
     pdf.cell(0, 10, "FINANCIAL & EQUITY RESEARCH REPORT", ln=True, align='C')
     
-    # Date
     pdf.set_text_color(0, 0, 0)
     pdf.set_y(45)
     pdf.set_font("Arial", 'I', 11)
     pdf.cell(0, 10, f"Generated automatically on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='R')
     pdf.ln(5)
     
-    # Section 1: Variance Table
     pdf.set_fill_color(230, 230, 230)
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 1. Financial Statement Variance Data", border=1, ln=True, fill=True)
@@ -168,7 +184,6 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
     
     pdf.set_font("Arial", 'B', 10)
     pdf.set_fill_color(200, 200, 200)
-    # Reduced widths slightly to ensure they fit in 190mm
     pdf.cell(55, 8, "Line Item", border=1, align='C', fill=True)
     pdf.cell(45, 8, "2024", border=1, align='C', fill=True)
     pdf.cell(45, 8, "2025", border=1, align='C', fill=True)
@@ -184,7 +199,6 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
         pdf.cell(45, 8, growth_str, border=1, ln=True, align='R')
     pdf.ln(8)
 
-    # Section 2: Ratios
     pdf.set_font("Arial", 'B', 14)
     pdf.set_fill_color(230, 230, 230)
     pdf.cell(0, 10, " 2. Key Performance Ratios", border=1, ln=True, fill=True)
@@ -197,17 +211,14 @@ def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_tabl
         pdf.set_font("Arial", '', 12)
     pdf.ln(8)
     
-    # Section 3: Expert Diagnosis
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 3. Expert Diagnosis & Vulnerabilities", border=1, ln=True, fill=True)
     pdf.ln(5)
     pdf.set_font("Arial", '', 11)
     for note in expert_diagnosis:
-        # Safe multi_cell call
         pdf.multi_cell(190, 8, txt=f"> {note}")
     pdf.ln(8)
     
-    # Section 4: Sensitivity & Market
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 4. Sensitivity Simulation & Market Benchmark", border=1, ln=True, fill=True)
     pdf.ln(5)
@@ -251,11 +262,9 @@ def auth_ui():
 def main_app():
     is_admin = (st.session_state.user.email.lower() == ADMIN_EMAIL.lower())
 
-    # --- SIDEBAR REDESIGN ---
     with st.sidebar:
         st.markdown("## ⚙️ Control Panel")
         
-        # Language Selector
         new_lang = st.selectbox("🌐 Interface Language", ["English", "Français", "Español", "Arabic"], index=["English", "Français", "Español", "Arabic"].index(st.session_state.lang))
         if new_lang != st.session_state.lang:
             st.session_state.lang = new_lang
@@ -263,7 +272,6 @@ def main_app():
             
         st.markdown("---")
         
-        # User Profile Box
         admin_tag = '<span class="admin-badge">ADMIN</span>' if is_admin else ''
         st.markdown(f"""
         <div class="sidebar-user">
@@ -272,16 +280,20 @@ def main_app():
         </div>
         """, unsafe_allow_html=True)
         
-        # Logout
         if st.button(lang_dict["logout"], use_container_width=True):
             supabase.auth.sign_out()
             st.session_state.user = None
             st.rerun()
 
+    # NEW MOROCCAN INVESTMENT BANNER
     st.markdown("""
-    <div style="background: linear-gradient(to right, #0e1117, #1f77b4); padding: 30px; border-radius: 5px; border-left: 5px solid #c1272d; margin-bottom: 20px;">
-        <h1 style="color: white; margin: 0;">Casablanca Stock Exchange</h1>
-        <p style='color:#b3b3b3; font-size:1.2rem; margin: 0;'>BTP Sector Equity Research & Financial Analytics Hub</p>
+    <div class="full-width-banner">
+        <div class="banner-overlay"></div>
+        <div class="banner-content">
+            <h1 style="color: white; margin: 0; font-size: 2.5rem; letter-spacing: 1px;">Casablanca Stock Exchange</h1>
+            <p style="color:#e0e0e0; font-size:1.2rem; margin: 5px 0 0 0;">BTP Sector Equity Research & Financial Analytics Hub</p>
+            <div class="moroccan-badge">🇲🇦 Moroccan Market Focus</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -409,7 +421,9 @@ def main_app():
                 
                 with c_action1:
                     if st.button("Save Analysis to My History", use_container_width=True):
+                        session_name_default = f"Analysis - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
                         session_data = {
+                            "Session_Name": session_name_default,
                             "Revenue": rev_25, "Net Margin": round(user_net_margin, 2), "ROE": round(user_roe, 2),
                             "Current Ratio": round(current_ratio, 2), "Date": datetime.now().strftime("%Y-%m-%d %H:%M")
                         }
@@ -534,7 +548,7 @@ def main_app():
             fig_m.update_layout(height=450, title=f"Price Trend - {selected_company} ({time_period})", template="plotly_dark", xaxis_rangeslider_visible=False)
             st.plotly_chart(fig_m, use_container_width=True)
 
-    # --- TAB 6: MY HISTORY ---
+    # --- TAB 6: MY HISTORY (WITH RENAME & DELETE) ---
     with tab6:
         st.header(lang_dict["history_title"])
         hist = get_history(st.session_state.user.id)
@@ -542,12 +556,33 @@ def main_app():
             st.info("No records found in database.")
         else:
             for item in hist:
+                session_id = item['id']
                 date_str = item['created_at'][:10]
                 data = json.loads(item['work_data'])
-                with st.expander(f"📊 Session: {date_str} - {data.get('Date', 'N/A')}"):
+                # Get session name or set default
+                session_name = data.get('Session_Name', f"Session: {date_str}")
+                
+                with st.expander(f"📊 {session_name}"):
+                    st.write(f"**Date Recorded:** {data.get('Date', 'N/A')}")
                     st.write(f"**Revenue:** {data.get('Revenue', 0):,.2f} MAD")
                     st.write(f"**Net Margin:** {data.get('Net Margin', 0)}%")
                     st.write(f"**ROE:** {data.get('ROE', 0)}%")
+                    
+                    st.markdown("---")
+                    col_ren, col_del = st.columns([3, 1])
+                    
+                    with col_ren:
+                        new_name = st.text_input("Rename Session", value=session_name, key=f"rename_{session_id}", label_visibility="collapsed")
+                        if st.button("✏️ Update Name", key=f"btn_ren_{session_id}"):
+                            if update_session_name(session_id, data, new_name):
+                                st.success("Renamed successfully!")
+                                st.rerun()
+                                
+                    with col_del:
+                        if st.button("🗑️ Delete", key=f"btn_del_{session_id}", type="primary", use_container_width=True):
+                            if delete_session(session_id):
+                                st.success("Deleted!")
+                                st.rerun()
 
     # --- TAB 5: ABOUT ---
     with tab5:
