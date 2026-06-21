@@ -1,3 +1,6 @@
-plotly
-openpyxl
+streamlit
 pandas
+plotly
+numpy
+openpyxl
+fpdf
