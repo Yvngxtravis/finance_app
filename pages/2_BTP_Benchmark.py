@@ -35,14 +35,12 @@ def get_live_market_data():
         df["PE_Ratio"] = pd.to_numeric(df["PE_Ratio"], errors='coerce')
         
         np.random.seed(42)
-        # Simulating metrics relevant to BTP (if not in CSV)
         df["Net_Margin_%"] = np.random.uniform(5, 18, len(df)).round(2)
         df["ROE_%"] = np.random.uniform(10, 25, len(df)).round(2)
-        df["Gearing_%"] = np.random.uniform(30, 150, len(df)).round(2) # Debt to Equity (Crucial for BTP)
+        df["Gearing_%"] = np.random.uniform(30, 150, len(df)).round(2) 
         df["Type"] = "Market Peer"
         return df
     except Exception: 
-        # Fallback dummy data if CSV fails
         data = {
             "Company": ["TGCC", "LafargeHolcim", "Addoha", "Alliances", "Sonasid", "Ciments du Maroc"],
             "Price_MAD": [300, 1800, 25, 120, 700, 1500],
@@ -56,14 +54,25 @@ def get_live_market_data():
 
 df_live = get_live_market_data()
 
-# --- SIDEBAR: TARGET COMPANY INPUT ---
-st.sidebar.markdown("### 🎯 Your Target Details")
-st.sidebar.info("Input your company's data to benchmark against the market.")
-target_name = st.sidebar.text_input("Project Name", "Project Alpha")
-target_margin = st.sidebar.number_input("Net Margin (%)", value=14.0, step=0.5)
-target_roe = st.sidebar.number_input("ROE (%)", value=20.0, step=0.5)
-target_gearing = st.sidebar.number_input("Gearing / Debt-to-Equity (%)", value=60.0, step=5.0, help="Total Debt / Total Equity. BTP average is ~80%.")
-target_pe = st.sidebar.number_input("Implied P/E Ratio", value=13.0, step=0.5)
+# --- NEW: TARGET INPUTS IN MAIN PAGE ---
+st.markdown("### 🎯 Configure Target Data")
+with st.container(border=True):
+    col_in1, col_in2, col_in3 = st.columns(3)
+    with col_in1:
+        target_name = st.text_input("Project Name", "Project Alpha")
+    with col_in2:
+        target_margin = st.number_input("Net Margin (%)", value=14.0, step=0.5)
+    with col_in3:
+        target_roe = st.number_input("ROE (%)", value=20.0, step=0.5)
+        
+    col_in4, col_in5, col_in6 = st.columns(3)
+    with col_in4:
+        target_gearing = st.number_input("Gearing (Debt/Equity %)", value=60.0, step=5.0, help="BTP average is ~80%.")
+    with col_in5:
+        target_pe = st.number_input("Implied P/E Ratio", value=13.0, step=0.5)
+    with col_in6:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.info("💡 Charts update automatically as you type.")
 
 # Append Target to Dataframe
 target_row = pd.DataFrame([{
@@ -73,15 +82,15 @@ target_row = pd.DataFrame([{
 }])
 df_combined = pd.concat([target_row, df_live], ignore_index=True)
 
+st.markdown("<br>", unsafe_allow_html=True)
+
 # --- THE UI ---
 st.subheader("⚖️ 1. Peer Comparison: Profitability & Returns")
 peers = st.multiselect("Select Competitors to Compare:", df_live["Company"].tolist(), default=df_live["Company"].tolist()[:4])
 
 if peers:
-    # Filter data for selected peers + the target company
     display_df = df_combined[(df_combined["Company"].isin(peers)) | (df_combined["Company"] == target_name)].copy()
     
-    # Custom color mapping: Target is Gold, Peers are Blue
     color_map = {target_name: "#f5b041"}
     for peer in peers: color_map[peer] = "#1f77b4"
 
@@ -104,16 +113,14 @@ col_matrix, col_radar = st.columns([1.2, 1], gap="large")
 
 with col_matrix:
     st.subheader("⚠️ 2. BTP Risk/Reward Matrix")
-    st.markdown("<p style='color:#b3b3b3; font-size:0.9rem;'>In construction, high ROE is often driven by dangerous debt levels. This matrix compares Profitability (ROE) vs Risk (Gearing).</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#b3b3b3; font-size:0.9rem;'>Compares Profitability (ROE) vs Financial Risk (Gearing).</p>", unsafe_allow_html=True)
     
-    # Scatter Plot: Risk vs Reward
     fig_scatter = px.scatter(
         df_combined, x="Gearing_%", y="ROE_%", color="Type", text="Company", size_max=60,
         color_discrete_map={"Your Target": "#f5b041", "Market Peer": "#1f77b4"}
     )
     fig_scatter.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')))
     
-    # Add quadrants (Averages)
     avg_gearing = df_live["Gearing_%"].mean()
     avg_roe = df_live["ROE_%"].mean()
     fig_scatter.add_hline(y=avg_roe, line_dash="dash", line_color="gray", annotation_text="Avg ROE")
@@ -124,11 +131,10 @@ with col_matrix:
 
 with col_radar:
     st.subheader("🕸️ 3. 360° Sector Profile")
-    st.markdown("<p style='color:#b3b3b3; font-size:0.9rem;'>Radar chart comparing your target against the BTP market average.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#b3b3b3; font-size:0.9rem;'>Radar chart comparing your target against the market average.</p>", unsafe_allow_html=True)
     
     categories = ['Net Margin', 'ROE', 'P/E Ratio', 'Financial Health (Inv Gearing)']
     
-    # Invert Gearing for the radar chart so "Bigger is Better"
     target_health = max(0, 150 - target_gearing) 
     market_health = max(0, 150 - df_live["Gearing_%"].mean())
     
