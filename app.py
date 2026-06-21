@@ -15,7 +15,7 @@ from fpdf import FPDF
 from supabase import create_client, ClientOptions
 
 # ==========================================
-# 1. SUPABASE CONFIGURATION (Clean & Secure)
+# 1. SUPABASE CONFIGURATION
 # ==========================================
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
@@ -46,9 +46,11 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
 .ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
 .ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
-.btn-pdf { background-color: #c1272d; color: white; padding: 10px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; transition: 0.3s; }
+.btn-pdf { background-color: #c1272d; color: white; padding: 15px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; transition: 0.3s; }
 .btn-pdf:hover { background-color: #a02025; color: white; }
 .glossary-box { background-color: #0e1117; padding: 15px; border-left: 3px solid #f5b041; border-radius: 5px; font-size: 0.9rem; color: #d0d3d4; margin-bottom: 15px; }
+.report-box { padding: 20px; border-radius: 10px; background-color: #161a22; border-left: 5px solid; margin-top: 20px; }
+.metric-box { background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,9 +71,9 @@ def get_history(user_id):
 
 def generate_template():
     df_template = pd.DataFrame({
-        "Line_Item": ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Total Equity", "Total Debt"], 
-        "2024": [0]*6, 
-        "2025": [0]*6
+        "Line_Item": ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Inventory", "Total Assets", "Total Equity", "Total Debt"], 
+        "2024": [0]*8, 
+        "2025": [0]*8
     })
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer: 
@@ -95,41 +97,87 @@ def get_live_market_data():
         return df
     except: return None
 
-# Fixed PDF Generator (fpdf2 compatibility)
-def create_pdf(metrics_dict):
+# Detailed PDF Generator
+def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_table, sim_data):
     pdf = FPDF()
     pdf.add_page()
+    
+    # Header
     pdf.set_fill_color(193, 39, 45)
     pdf.rect(0, 0, 210, 35, 'F')
     pdf.set_y(12)
     pdf.set_font("Arial", 'B', 22)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 10, "FINANCIAL ANALYTICS REPORT", ln=True, align='C')
+    pdf.cell(0, 10, "FINANCIAL & EQUITY RESEARCH REPORT", ln=True, align='C')
     
+    # Date
     pdf.set_text_color(0, 0, 0)
     pdf.set_y(45)
-    pdf.set_font("Arial", 'I', 10)
-    pdf.cell(0, 10, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='R')
+    pdf.set_font("Arial", 'I', 11)
+    pdf.cell(0, 10, f"Generated automatically on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='R')
     pdf.ln(5)
     
+    # Section 1: Variance Table
+    pdf.set_fill_color(230, 230, 230)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " 1. Financial Statement Variance Data", border=1, ln=True, fill=True)
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_fill_color(200, 200, 200)
+    pdf.cell(60, 8, "Line Item", border=1, align='C', fill=True)
+    pdf.cell(45, 8, "2024", border=1, align='C', fill=True)
+    pdf.cell(45, 8, "2025", border=1, align='C', fill=True)
+    pdf.cell(40, 8, "YoY Growth (%)", border=1, ln=True, align='C', fill=True)
+    
+    pdf.set_font("Arial", '', 10)
+    for index, row in df_table.iterrows():
+        pdf.cell(60, 8, str(index), border=1)
+        pdf.cell(45, 8, f"{row.iloc[0]:,.0f}", border=1, align='R')
+        pdf.cell(45, 8, f"{row.iloc[1]:,.0f}", border=1, align='R')
+        val = row['YoY Growth (%)']
+        growth_str = f"{val:.2f}%" if pd.notna(val) else "N/A"
+        pdf.cell(40, 8, growth_str, border=1, ln=True, align='R')
+    pdf.ln(10)
+
+    # Section 2: Ratios
     pdf.set_font("Arial", 'B', 14)
     pdf.set_fill_color(230, 230, 230)
-    pdf.cell(0, 10, " Key Performance Metrics", border=1, ln=True, fill=True)
+    pdf.cell(0, 10, " 2. Key Performance Ratios", border=1, ln=True, fill=True)
     pdf.ln(5)
-    
     pdf.set_font("Arial", '', 12)
-    for key, value in metrics_dict.items():
-        pdf.cell(80, 10, f"{key}:", border=0)
+    for key, value in company_ratios.items():
+        pdf.cell(90, 8, f"{key}:", border=0)
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, f"{value}", border=0, ln=True)
+        pdf.cell(0, 8, f"{value}", border=0, ln=True)
         pdf.set_font("Arial", '', 12)
+    pdf.ln(10)
     
+    # Section 3: Expert Diagnosis
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " 3. Expert Diagnosis & Vulnerabilities", border=1, ln=True, fill=True)
+    pdf.ln(5)
+    pdf.set_font("Arial", '', 11)
+    for note in expert_diagnosis:
+        pdf.multi_cell(0, 8, txt=f"> {note}")
+    pdf.ln(10)
+    
+    # Section 4: Sensitivity & Market
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " 4. Sensitivity Simulation & Market Benchmark", border=1, ln=True, fill=True)
+    pdf.ln(5)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 8, f"- Simulated Future Revenue: {sim_data['rev']:,.2f} MAD", ln=True)
+    pdf.cell(0, 8, f"- Simulated Future Net Margin: {sim_data['margin']:.2f}%", ln=True)
+    pdf.ln(5)
+    pdf.multi_cell(0, 8, txt=f"The company's performance was evaluated against the Casablanca Stock Exchange (CSE) BTP sector. The average sector P/E Ratio currently stands at {sector_avg_pe:.2f}.")
+    
+    # Footer
     pdf.set_y(-25)
     pdf.set_font("Arial", 'I', 9)
     pdf.set_text_color(150, 150, 150)
-    pdf.cell(0, 10, "Generated via Z.ELAIDI Financial Hub", align='C')
+    pdf.cell(0, 10, "Report generated via Z.ELAIDI Automated Analytics Platform", align='C')
     
-    # Returning raw bytes instead of encoding to fix the fpdf2 issue
     return bytes(pdf.output())
 
 # ==========================================
@@ -220,20 +268,23 @@ def main_app():
                 df_display['YoY Growth (%)'] = ((df_display[col_25] - df_display[col_24]) / df_display[col_24]) * 100
                 
                 def color_variance(row):
+                    item = str(row.name).lower()
                     val = row['YoY Growth (%)']
                     if pd.isna(val): return [''] * len(row)
-                    color = '#2ca02c' if val > 0 else '#d62728'
+                    # Red for liability/debt growth, Green for asset/revenue growth
+                    color = '#d62728' if ('liability' in item or 'debt' in item) and val > 0 else '#2ca02c' if val > 0 else '#d62728'
                     return [f'color: {color}' if col == 'YoY Growth (%)' else '' for col in row.index]
 
+                # Top Row: Variance Table & Sensitivity
                 left_col, right_col = st.columns([1.5, 1], gap="large")
                 
                 with left_col:
                     st.subheader("📋 Imported Variance Analysis")
                     st.dataframe(df_display.style.apply(color_variance, axis=1).format({'YoY Growth (%)': "{:.2f}%"}), use_container_width=True)
 
-                    # Calculating Ratios
-                    rev_25 = float(df_finance.loc["Revenue", col_25])
-                    net_25 = float(df_finance.loc["Net Income", col_25])
+                    # Extract values for Ratios
+                    rev_24, rev_25 = float(df_finance.loc["Revenue", col_24]), float(df_finance.loc["Revenue", col_25])
+                    net_24, net_25 = float(df_finance.loc["Net Income", col_24]), float(df_finance.loc["Net Income", col_25])
                     ca_25 = float(df_finance.loc["Current Assets", col_25])
                     cl_25 = float(df_finance.loc["Current Liabilities", col_25])
                     eq_25 = float(df_finance.loc["Total Equity", col_25])
@@ -242,14 +293,79 @@ def main_app():
                     user_roe = (net_25 / eq_25) * 100 if eq_25 > 0 else 0
                     current_ratio = ca_25 / cl_25 if cl_25 > 0 else 0
 
-                    st.subheader("📊 Key Performance Ratios")
-                    cr1, cr2, cr3 = st.columns(3)
-                    cr1.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=current_ratio, title={'text': "Current Ratio"}, gauge={'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-                    cr2.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_net_margin, number={'suffix': "%"}, title={'text': "Net Margin"}, gauge={'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-                    cr3.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_roe, number={'suffix': "%"}, title={'text': "ROE"}, gauge={'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-
                 with right_col:
-                    st.subheader("💾 Database & Reports")
+                    st.subheader("🎛️ Sensitivity Analysis (What-If)")
+                    
+                    # Sliders for Simulation
+                    sim_rev_exact = st.number_input("Revenue Growth (%)", -30, 30, 0, step=1)
+                    sim_cost_exact = st.number_input("Cost Reduction (%)", 0, 30, 0, step=1)
+                    
+                    sim_rev = rev_25 * (1 + (sim_rev_exact/100))
+                    sim_costs = (rev_25 - net_25) * (1 - (sim_cost_exact/100))
+                    sim_net = sim_rev - sim_costs
+                    sim_margin = (sim_net / sim_rev * 100) if sim_rev > 0 else 0
+                    
+                    st.markdown(f"""
+                    <div class="metric-box">
+                        <p style="margin:0; color:#b3b3b3; font-size:14px;">Simulated Revenue (MAD)</p>
+                        <h3 style="margin:0; color:#2ca02c;">{sim_rev:,.2f}</h3>
+                    </div>
+                    <div class="metric-box">
+                        <p style="margin:0; color:#b3b3b3; font-size:14px;">Simulated Net Margin</p>
+                        <h3 style="margin:0; color:#1f77b4;">{sim_margin:.2f}%</h3>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("---")
+                
+                # Middle Row: Ratios & Charts
+                st.subheader("📊 Key Performance Ratios")
+                cr1, cr2, cr3 = st.columns(3)
+                cr1.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=current_ratio, title={'text': "Current Ratio"}, gauge={'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+                cr2.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_net_margin, number={'suffix': "%"}, title={'text': "Net Margin"}, gauge={'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+                cr3.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_roe, number={'suffix': "%"}, title={'text': "ROE"}, gauge={'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+
+                st.markdown("---")
+
+                # Bottom Row: Expert Diagnosis & Financial Progression
+                col_diag, col_chart = st.columns([1, 1], gap="large")
+                
+                with col_diag:
+                    st.subheader("💡 Expert Financial Diagnosis")
+                    score_positif = sum([current_ratio >= 1.2, user_net_margin >= 8.0, user_roe >= 12.0])
+                    if score_positif >= 2:
+                        color, status = "#2ca02c", "Favorable Financial Situation (Key Strengths)"
+                        selected_nbs = ["Excellent liquidity management.", "Strong operational profitability confirmed.", "Optimal value creation for shareholders with attractive ROE."]
+                    else:
+                        color, status = "#d62728", "Critical Financial Situation (Vulnerabilities)"
+                        selected_nbs = ["Potential liquidity drain: Monitor short-term solvency.", "Value destruction: Margins are below sector standards.", "High dependency on debt or low operational efficiency."]
+                        
+                    st.markdown(f"""
+                    <div class="report-box" style="border-color: {color};">
+                        <h4 style="color: {color}; margin-top: 0;">{status}</h4>
+                        <ul>
+                            <li style="color: #b3b3b3;"><b>N.B:</b> {selected_nbs[0]}</li>
+                            <li style="color: #b3b3b3;"><b>N.B:</b> {selected_nbs[1]}</li>
+                            <li style="color: #b3b3b3;"><b>N.B:</b> {selected_nbs[2]}</li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                with col_chart:
+                    st.subheader("📈 YoY Financial Progression")
+                    fig_yoy = go.Figure()
+                    fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[rev_24, rev_25], name='Revenue', marker_color='#1f77b4'))
+                    fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[net_24, net_25], name='Net Income', marker_color='#2ca02c'))
+                    fig_yoy.update_layout(barmode='group', template="plotly_dark", height=250, margin=dict(l=0, r=0, t=30, b=0))
+                    st.plotly_chart(fig_yoy, use_container_width=True)
+
+                st.markdown("---")
+
+                # Database & Reports Actions
+                st.subheader("💾 Actions & Reports")
+                c_action1, c_action2 = st.columns(2)
+                
+                with c_action1:
                     if st.button("Save Analysis to My History", use_container_width=True):
                         session_data = {
                             "Revenue": rev_25, "Net Margin": round(user_net_margin, 2), "ROE": round(user_roe, 2),
@@ -258,24 +374,26 @@ def main_app():
                         if save_history(st.session_state.user.id, st.session_state.user.email, session_data):
                             st.success("✅ Saved successfully!")
                         else: st.error("⚠️ Failed to save.")
-                    
-                    # Fixed PDF Generation
+                        
+                with c_action2:
+                    # Generate the Full Detailed PDF
                     try:
-                        metrics = {
-                            "Revenue (MAD)": f"{rev_25:,.2f}",
-                            "Net Margin (%)": f"{user_net_margin:.2f}%",
-                            "ROE (%)": f"{user_roe:.2f}%",
+                        ratios_dict = {
+                            "Revenue": f"{rev_25:,.2f} MAD", 
+                            "Net Margin": f"{user_net_margin:.2f}%", 
+                            "ROE": f"{user_roe:.2f}%", 
                             "Current Ratio": f"{current_ratio:.2f}"
                         }
-                        pdf_bytes = create_pdf(metrics)
+                        sector_pe = df_live['PE_Ratio'].mean() if df_live is not None else 15.0
+                        pdf_bytes = create_detailed_pdf(ratios_dict, selected_nbs, sector_pe, df_display, {"rev": sim_rev, "margin": sim_margin})
                         b64_pdf = base64.b64encode(pdf_bytes).decode('latin-1')
-                        href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="Financial_Report_Z_ELAIDI.pdf" class="btn-pdf">📄 Download PDF Report</a>'
+                        href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="Financial_Report_Z_ELAIDI.pdf" class="btn-pdf">📄 Download Detailed PDF Report</a>'
                         st.markdown(href, unsafe_allow_html=True)
                     except Exception as e:
                         st.error(f"Error generating PDF: {str(e)}")
 
             except Exception as e:
-                st.error("⚠️ Error processing file. Ensure strict template format.")
+                st.error(f"⚠️ Error processing file. {str(e)}")
 
     # --- TAB 2: SECTOR BENCHMARK ---
     with tab2:
@@ -296,7 +414,7 @@ def main_app():
         with st.expander("ℹ️ Glossary & Definitions"):
             st.markdown("""
             <div class="glossary-box">
-                <b>WACC (Weighted Average Cost of Capital):</b> The minimum acceptable return a company must earn to satisfy its creditors and owners.<br>
+                <b>WACC (Weighted Average Cost of Capital):</b> The minimum acceptable return a company must earn to satisfy its creditors and investors.<br>
                 <b>Terminal Growth %:</b> The constant rate at which a company is expected to grow forever beyond the initial projection period.<br>
                 <b>EV (Enterprise Value):</b> A measure of a company's total value, often used as a more comprehensive alternative to equity market capitalization.<br>
                 <b>Entry/Exit Multiples:</b> Financial metrics (like EV/EBITDA) used to determine the purchase and selling price of the business.<br>
