@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 import random
 import io
 
-# 1. Configuration de la page
+# 1. Page Configuration
 st.set_page_config(page_title="Z.ELAIDI - Financial Analytics Hub", layout="wide", page_icon="📊")
 
-# 2. PREMIUM CSS: Police 'Montserrat', Marges centrées, et Banner
+# 2. Premium CSS & Full Width Banner
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
@@ -20,11 +20,10 @@ html, body, [class*="css"] {
     font-family: 'Montserrat', sans-serif !important;
 }
 
-/* Centrer le contenu et éviter que ça touche les bords */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
-    max-width: 90% !important; /* Ajoute des marges sur les côtés */
+    max-width: 90% !important;
     margin: 0 auto;
 }
 
@@ -36,7 +35,7 @@ html, body, [class*="css"] {
     background-size: cover;
     background-position: center;
     margin-bottom: 2rem;
-    border-radius: 15px; /* Bords arrondis pour le style premium */
+    border-radius: 15px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.6);
     overflow: hidden;
 }
@@ -44,7 +43,31 @@ html, body, [class*="css"] {
 .banner-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));
+    background: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 100%);
+}
+
+.banner-title-container {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    transform: translateY(-50%);
+    color: white;
+    z-index: 2;
+}
+
+.banner-title-container h1 {
+    font-size: 3.2rem;
+    font-weight: 700;
+    margin-bottom: 0px;
+    letter-spacing: 1px;
+    color: white;
+}
+
+.banner-title-container p {
+    font-size: 1.2rem;
+    color: #b3b3b3;
+    margin-top: 5px;
+    font-weight: 400;
 }
 
 .moroccan-badge {
@@ -71,11 +94,16 @@ html, body, [class*="css"] {
     margin-top: 20px;
 }
 </style>
+
 <div class="full-width-banner">
     <div class="banner-overlay"></div>
+    <div class="banner-title-container">
+        <h1>Casablanca Stock Exchange</h1>
+        <p>BTP Sector Equity Research & Financial Analytics Hub</p>
+    </div>
     <div class="moroccan-badge">
         <img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Flag_of_Morocco.svg" width="28" style="border-radius:2px;">
-        Casablanca Stock Exchange Focus
+        CSE Focus
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -112,8 +140,7 @@ def get_live_market_data():
 
 df_live = get_live_market_data()
 
-# Ajout d'un 4ème Tab pour "About"
-tab1, tab2, tab3, tab4 = st.tabs(["📈 Corporate Financial Analysis", "🏗️ BTP Sector Equity Research", "💹 Live Market Charts (MASI)", "👤 About the Creator"])
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Corporate Financial Analysis", "🏗️ BTP Sector Equity Research", "💹 Live Market Charts", "👤 About the Creator"])
 
 # ==========================================
 # TAB 1: AUTOMATED FINANCIAL ANALYSIS 
@@ -126,7 +153,7 @@ with tab1:
         st.markdown("**Upload your company's financial Excel template to automatically generate a visual performance analysis.**")
     with col_btn:
         st.download_button(
-            label="📥 Télécharger le Template Requis",
+            label="📥 Download Required Template",
             data=generate_template(),
             file_name="Financial_Template_Standard.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -146,7 +173,7 @@ with tab1:
             col_2025 = [c for c in df_finance.columns if '2025' in str(c)][0]
             
             st.subheader("📋 Imported Financial Data (Variance Analysis)")
-            st.markdown("Les indicateurs en **<span style='color:#00ff00'>Vert</span>** sont des points forts, ceux en **<span style='color:#ff0000'>Rouge</span>** sont des alertes.", unsafe_allow_html=True)
+            st.markdown("Indicators in **<span style='color:#00ff00'>Green</span>** represent strengths or growth, those in **<span style='color:#ff0000'>Red</span>** represent alerts or decline.", unsafe_allow_html=True)
             
             df_display = df_finance.copy()
             df_display[col_2024] = pd.to_numeric(df_display[col_2024], errors='coerce')
@@ -171,7 +198,7 @@ with tab1:
             missing_rows = [row for row in required_rows if row not in df_finance.index]
             
             if missing_rows:
-                st.error(f"⚠️ Format Invalide : Lignes manquantes : {', '.join(missing_rows)}. Veuillez télécharger le template requis ci-dessus.")
+                st.error(f"⚠️ Invalid Format: The following rows are missing or misspelled: {', '.join(missing_rows)}. Please download and use the required template above.")
             else:
                 rev_25 = float(df_finance.loc["Revenue", col_2025])
                 net_25 = float(df_finance.loc["Net Income", col_2025])
@@ -212,28 +239,28 @@ with tab1:
 
                 st.subheader("💡 Expert Financial Diagnosis")
                 nb_positifs = [
-                    "Excellente gestion de la trésorerie. L'entreprise peut s'auto-financer.",
-                    "Forte rentabilité opérationnelle confirmée.",
-                    "Structure de coûts très bien maîtrisée (Avantage compétitif).",
-                    "Création de valeur optimale pour les actionnaires.",
-                    "Forte capacité à honorer les dettes à court terme.",
-                    "Marge bénéficiaire nette au-dessus de la norme sectorielle.",
-                    "Efficacité remarquable dans l'utilisation des actifs.",
-                    "Indépendance financière solide face aux chocs du marché.",
-                    "Potentiel de croissance organique fort.",
-                    "Gestion rigoureuse et saine des passifs circulants."
+                    "Excellent cash management. The company can easily self-finance operations.",
+                    "Strong operational profitability confirmed across the board.",
+                    "Highly controlled cost structure providing a strong competitive advantage.",
+                    "Optimal value creation for shareholders with a highly attractive ROE.",
+                    "Strong capacity to honor short-term debts without liquidity stress.",
+                    "Net profit margin is well above the industry standard.",
+                    "Remarkable efficiency in asset rotation and utilization.",
+                    "Solid financial independence against unexpected market shocks.",
+                    "Strong organic growth potential driven by generated reserves.",
+                    "Rigorous and healthy management of current liabilities."
                 ]
                 nb_negatifs = [
-                    "Fuite de liquidité sévère : Risque imminent d'insolvabilité.",
-                    "Marge nette critique : Les charges absorbent presque tous les revenus.",
-                    "Destruction de valeur : Le ROE est trop faible.",
-                    "Déséquilibre flagrant du fonds de roulement.",
-                    "Poids de la dette circillante trop lourd.",
-                    "Dégradation alarmante de la profitabilité.",
-                    "Besoin urgent d'optimiser les coûts fixes.",
-                    "Risque de dépendance extrême aux créanciers externes.",
-                    "Faible retour sur investissement des capitaux engagés.",
-                    "Structure financière sous tension (Alerte trésorerie)."
+                    "Severe liquidity drain: Imminent risk of short-term insolvency.",
+                    "Critical net margin: Expenses are absorbing almost all generated revenues.",
+                    "Value destruction: ROE is too low to attract or retain investors.",
+                    "Blatant working capital imbalance: Urgent need to optimize inventory and receivables.",
+                    "Current debt burden is too heavy compared to available liquidity.",
+                    "Alarming degradation in profitability. Urgent need to revise the pricing model.",
+                    "Urgent need to optimize fixed costs to stop financial hemorrhage.",
+                    "Risk of extreme dependence on external creditors and banks.",
+                    "Low return on invested capital across current projects.",
+                    "Financial structure under severe stress (Red alert on cash flow)."
                 ]
                 
                 score_positif = 0
@@ -245,11 +272,11 @@ with tab1:
                 
                 if score_positif >= 2:
                     color = "#2ca02c"
-                    status = "Situation Financière Favorable (Points Forts)"
+                    status = "Favorable Financial Situation (Key Strengths)"
                     selected_nbs = random.sample(nb_positifs, 3)
                 else:
                     color = "#d62728"
-                    status = "Situation Financière Critique (Fuites à corriger)"
+                    status = "Critical Financial Situation (Vulnerabilities to Address)"
                     selected_nbs = random.sample(nb_negatifs, 3)
                     
                 st.markdown(f"""
@@ -264,7 +291,7 @@ with tab1:
                 """, unsafe_allow_html=True)
                 
         except Exception as e:
-            st.error(f"⚠️ Erreur de lecture : Veuillez utiliser le template requis.")
+            st.error(f"⚠️ Read Error: Please use the required standard template to ensure proper calculations.")
 
 # ==========================================
 # TAB 2: EQUITY RESEARCH 
@@ -291,7 +318,7 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': False, 'displayModeBar': False})
 
 # ==========================================
-# TAB 3: LIVE MARKET CHARTS (Fix Zoom Y-Axis)
+# TAB 3: LIVE MARKET CHARTS
 # ==========================================
 with tab3:
     st.header("💹 Technical Analysis & Historical Trends")
@@ -301,7 +328,7 @@ with tab3:
         with col_sel1:
             selected_company = st.selectbox("Select Company:", df_live["Company"].tolist())
         with col_sel2:
-            time_period = st.selectbox("Timeframe (Historique):", ["1 Month (30 Days)", "3 Months (90 Days)", "6 Months (180 Days)"])
+            time_period = st.selectbox("Timeframe (Historical):", ["1 Month (30 Days)", "3 Months (90 Days)", "6 Months (180 Days)"])
         with col_sel3:
             chart_type = st.radio("Chart Style:", ["Candlesticks", "Line Chart"], horizontal=True)
         
@@ -339,7 +366,7 @@ with tab3:
             dragmode='zoom', 
             margin=dict(l=20, r=20, t=50, b=20),
             xaxis=dict(range=[dates[0], dates[-1] + timedelta(days=2)], fixedrange=False), 
-            yaxis=dict(fixedrange=True) # HADI HIYA LI KAT-7BESS L'MOUCHKIL DIAL Y-AXIS SQUASHING!
+            yaxis=dict(fixedrange=True) 
         )
         
         st.plotly_chart(fig_market, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': True})
@@ -348,28 +375,28 @@ with tab3:
 # TAB 4: ABOUT THE CREATOR
 # ==========================================
 with tab4:
-    st.header("👤 About the Creator & Platform")
+    st.header("👤 About the Creator")
     
     col_about1, col_about2 = st.columns([2, 1])
     
     with col_about1:
         st.markdown("""
-        ### **Zakaria Elaidi** *Financial Analyst & Strategist*
+        ### **Zakaria Elaidi** | *Financial Analyst*
         
-        Zakaria is a dynamic financial analyst currently specializing in Finance and Management at the prestigious **Ecole Nationale de Commerce et de Gestion (ENCG) in El Jadida**. 
+        Zakaria is a dedicated financial analyst currently specializing in Finance at the prestigious **Ecole Nationale de Commerce et de Gestion (ENCG) in El Jadida**. 
         
-        With an unwavering passion for corporate finance and data analytics, Zakaria brings significant real-world experience to the table. As a freelance financial analyst, he has successfully delivered over **150 financial modeling and consulting projects** for a diverse range of international clients.
+        With a strong background in corporate finance and data analysis, Zakaria operates as a successful freelance financial consultant. He has a proven track record, having delivered over **150 financial modeling and consulting projects** for a global client base.
         
-        **About this Platform:**
-        This platform was built to bridge the gap between traditional financial assessment and modern data automation. By leveraging Python and interactive data visualization, this tool transforms hours of manual Excel crunching into instant, actionable insights. 
+        **Platform Vision:**
+        This platform bridges the gap between traditional equity research and automated data visualization. By utilizing Python, this tool aims to transform manual financial assessments into rapid, data-driven insights.
         """)
-        st.info("💡 **Core Expertise:** Equity Research, Financial Modeling, Data Automation, Corporate Strategy.")
+        st.info("💡 **Core Expertise:** Equity Research, Corporate Finance, Data Automation, Financial Modeling.")
     
     with col_about2:
         st.markdown("""
         <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid #c1272d;">
-            <h3 style="margin-top:0;">Let's Connect</h3>
-            <p>Interested in financial consulting, equity research, or a potential collaboration?</p>
+            <h3 style="margin-top:0;">Professional Network</h3>
+            <p>Open for financial consulting opportunities, equity research projects, and professional networking.</p>
             <br>
             <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Connect on LinkedIn</a>
         </div>
