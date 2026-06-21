@@ -1,7 +1,10 @@
+import streamlit as st
 
-
-# MUST BE THE FIRST LINE
-st.set_page_config(page_title="Z.ELAIDI - Financial Analytics", layout="wide", page_icon="📊")
+st.set_page_config(
+    page_title="Z.ELAIDI - Financial Analytics",
+    layout="wide",
+    page_icon="📊"
+)
 
 import pandas as pd
 import plotly.express as px
