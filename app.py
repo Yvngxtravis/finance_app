@@ -113,7 +113,6 @@ def save_history(user_id, email, data_dict):
 
 def get_history(user_id):
     try:
-        # Added 'id' to the select query to allow editing/deleting specific rows
         res = supabase.table("users_history").select("id, created_at, work_data").eq("user_id", user_id).order("created_at", desc=True).execute()
         return res.data
     except: return []
@@ -145,19 +144,22 @@ def generate_template():
 @st.cache_data(ttl=60)
 def get_live_market_data():
     try:
-        df = pd.DataFrame({
-            "Company": ["TGCC", "LafargeHolcim", "Sonasid", "Jet Contractors", "Colorado"],
-            "Price_MAD": [250.0, 1800.0, 750.0, 320.0, 50.0],
-            "PE_Ratio": [15.2, 18.5, 12.1, 14.0, 10.5]
-        })
+        df = pd.read_csv("btp_market_data.csv")
+        df["Price_MAD"] = pd.to_numeric(df["Price_MAD"], errors='coerce')
+        df["PE_Ratio"] = pd.to_numeric(df["PE_Ratio"], errors='coerce')
+        
         np.random.seed(42)
         fluctuation = np.random.uniform(-0.02, 0.02, len(df))
         df["Live_Price_MAD"] = (df["Price_MAD"] * (1 + fluctuation)).round(2)
         df["Variation"] = (fluctuation * 100).round(2)
+        
         df["Net_Margin_%"] = np.random.uniform(5, 18, len(df)).round(2)
         df["ROE_%"] = np.random.uniform(10, 25, len(df)).round(2)
+        
         return df
-    except: return None
+    except Exception as e: 
+        st.error(f"Error loading CSV: {str(e)}")
+        return None
 
 # FIXED & ENHANCED PDF GENERATOR (Pro Edition)
 def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_table, sim_data, user_email):
@@ -652,28 +654,39 @@ def main_app():
     # --- TAB 5: ABOUT ---
     with tab5:
         st.header(lang_dict["about_title"])
-        col_about1, col_about2 = st.columns([2, 1])
-        with col_about1:
-            st.markdown("""
-            ### **Zakaria Elaidi** | *Financial Analyst & M&A Specialist*
-            
-            Currently pursuing a Master's degree in Finance (Programme Grande École) at **ENCG El Jadida**, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.
-            
-            With a strategic focus on targeting roles in **M&A, Investment Banking, and Private Equity**, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).
-            
-            **Professional Background:**
-            * **Consulting Experience:** Successfully delivered over 150 financial modeling and analysis projects globally as a freelance consultant.
-            * **Corporate Exposure:** Completed the rigorous KPMG UK Audit Job Simulation and is actively preparing for an upcoming professional placement at OCP Group.
-            * **Core Expertise:** DCF Valuation, LBO Modeling, Market Finance, Marché des Capitaux, and Financial Statement Analysis.
-            """)
-        with col_about2:
-            st.markdown("""
-            <div style="background-color: #161a22; padding: 25px; border: 1px solid #333; text-align: center; border-radius: 8px; border-top: 4px solid #c1272d;">
-                <h4 style="margin-top:0; color:#fff;">Professional Network</h4>
-                <p style="color:#b3b3b3; font-size: 0.9rem;">Open to networking, M&A discussions, and equity research collaborations.</p>
-                <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 10px;">Connect on LinkedIn</a>
+        
+        st.markdown("""
+        <div style="background-color: #161a22; border: 1px solid #333; border-left: 5px solid #1f77b4; padding: 30px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <div style="display: flex; flex-direction: row; gap: 30px; flex-wrap: wrap;">
+                
+                <div style="flex: 2; min-width: 300px;">
+                    <h2 style="margin-top:0; color: white;">Zakaria Elaidi <span style="color:#b3b3b3; font-weight:300; font-size:1.2rem;">| Financial Analyst & M&A Specialist</span></h2>
+                    <p style="color: #d0d3d4; font-size: 1.05rem; line-height: 1.6;">
+                        Currently pursuing a Master's degree in Finance (Programme Grande École) at <b>ENCG El Jadida</b>, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.
+                    </p>
+                    <p style="color: #d0d3d4; font-size: 1.05rem; line-height: 1.6;">
+                        With a strategic focus on targeting roles in <b>M&A, Investment Banking, and Private Equity</b>, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).
+                    </p>
+                    
+                    <h4 style="color: white; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">Professional Background</h4>
+                    <ul style="color: #d0d3d4; font-size: 1rem; line-height: 1.8;">
+                        <li><b>Consulting Experience:</b> Successfully delivered over 150 financial modeling and analysis projects globally as a freelance consultant.</li>
+                        <li><b>Corporate Exposure:</b> Completed the rigorous KPMG UK Audit Job Simulation and actively preparing for a professional placement at OCP Group.</li>
+                        <li><b>Core Expertise:</b> DCF Valuation, LBO Modeling, Market Finance, Marché des Capitaux, and Financial Statement Analysis.</li>
+                    </ul>
+                </div>
+                
+                <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #0e1117; padding: 25px; border-radius: 8px; border-top: 4px solid #c1272d;">
+                    <h3 style="margin-top:0; color:#fff; text-align:center;">Professional Network</h3>
+                    <p style="color:#b3b3b3; font-size: 0.95rem; text-align:center; margin-bottom: 20px;">Open to networking, M&A discussions, and equity research collaborations.</p>
+                    <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; text-align:center; width: 100%; transition: 0.3s;">
+                        Connect on LinkedIn
+                    </a>
+                </div>
+                
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================
 # 7. ROUTER
