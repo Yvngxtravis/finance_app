@@ -54,7 +54,7 @@ def get_live_market_data():
 
 df_live = get_live_market_data()
 
-# --- NEW: TARGET INPUTS IN MAIN PAGE ---
+# --- TARGET INPUTS IN MAIN PAGE ---
 st.markdown("### 🎯 Configure Target Data")
 with st.container(border=True):
     col_in1, col_in2, col_in3 = st.columns(3)
@@ -72,7 +72,7 @@ with st.container(border=True):
         target_pe = st.number_input("Implied P/E Ratio", value=13.0, step=0.5)
     with col_in6:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.info("💡 Charts update automatically as you type.")
+        st.info("💡 Charts and tables update automatically.")
 
 # Append Target to Dataframe
 target_row = pd.DataFrame([{
@@ -83,6 +83,29 @@ target_row = pd.DataFrame([{
 df_combined = pd.concat([target_row, df_live], ignore_index=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+# --- RESTORED: RAW DATA TABLE ---
+st.subheader("📊 Market Data Overview")
+
+# Highlight function to make the Target Company stand out in the table
+def highlight_target(row):
+    if row['Type'] == 'Your Target':
+        return ['background-color: rgba(245, 176, 65, 0.15)'] * len(row)
+    return [''] * len(row)
+
+st.dataframe(
+    df_combined[["Company", "Type", "Price_MAD", "PE_Ratio", "Net_Margin_%", "ROE_%", "Gearing_%"]].style.apply(highlight_target, axis=1).format({
+        "Price_MAD": "{:,.2f}",
+        "PE_Ratio": "{:.2f}x",
+        "Net_Margin_%": "{:.2f}%",
+        "ROE_%": "{:.2f}%",
+        "Gearing_%": "{:.2f}%"
+    }),
+    use_container_width=True,
+    hide_index=True
+)
+
+st.markdown("---")
 
 # --- THE UI ---
 st.subheader("⚖️ 1. Peer Comparison: Profitability & Returns")
