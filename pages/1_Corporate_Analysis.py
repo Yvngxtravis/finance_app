@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.graph_objects as go
 import io
 import json
-import base64
 from datetime import datetime
 from fpdf import FPDF
 from supabase import create_client, ClientOptions
@@ -16,8 +15,6 @@ st.markdown("""
 <style>
 .metric-box { background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }
 .report-box { padding: 20px; border-radius: 10px; background-color: #161a22; border-left: 5px solid; margin-top: 20px; }
-.btn-pdf-teaser { background-color: #f5b041; color: #000 !important; padding: 12px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none !important; font-weight: bold; margin-top: 10px; transition: 0.3s; }
-.btn-pdf-teaser:hover { background-color: #d68910; color: #000 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -42,8 +39,7 @@ def save_history(user_id, email, data_dict):
             "work_data": json.dumps(data_dict)
         }).execute()
         return True
-    except Exception:
-        return False
+    except Exception: return False
 
 def generate_template():
     df_template = pd.DataFrame({
@@ -56,70 +52,98 @@ def generate_template():
         df_template.to_excel(writer, index=False)
     return output.getvalue()
 
-# --- M&A TEASER GENERATOR (FIXED WIDTHS) ---
-def create_teaser_pdf(ratios, diagnosis, rev_sim, margin_sim):
+# --- RICH DETAILED PDF GENERATOR ---
+def create_rich_pdf(df_display, net_margin, roe, current_ratio, sim_rev, sim_margin, diagnosis):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_margins(15, 20, 15)
+    pdf.set_margins(15, 15, 15)
     
-    # Teaser Header
+    # 1. HEADER
     pdf.set_fill_color(31, 119, 180) 
-    pdf.rect(0, 0, 210, 40, 'F')
-    pdf.set_y(15)
-    pdf.set_font("Arial", 'B', 24)
+    pdf.rect(0, 0, 210, 35, 'F')
+    pdf.set_y(12)
+    pdf.set_font("Arial", 'B', 20)
     pdf.set_text_color(255, 255, 255)
-    
-    # FIXED: Added explicit width (180) to avoid 'Horizontal Space' errors.
-    pdf.cell(180, 10, "INVESTMENT TEASER (PROJECT ALPHA)", ln=True, align='C')
-    
-    pdf.set_y(50)
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(180, 10, "Executive Summary", border=0, ln=True)
+    pdf.cell(0, 10, "COMPREHENSIVE FINANCIAL REPORT", ln=True, align='C')
     pdf.set_font("Arial", '', 11)
-    pdf.multi_cell(180, 7, "This document presents a high-level overview of a prospective target operating within the Moroccan BTP sector. The target demonstrates specific financial characteristics making it a subject of interest for M&A / Private Equity evaluation.")
-    pdf.ln(8)
+    pdf.cell(0, 6, f"Generated on: {datetime.now().strftime('%d %b %Y - %H:%M')}", ln=True, align='C')
     
-    # Financial Highlights Box
+    pdf.set_y(45)
+    pdf.set_text_color(0, 0, 0)
+    
+    # 2. FINANCIAL STATEMENTS TABLE
+    pdf.set_font("Arial", 'B', 14)
     pdf.set_fill_color(240, 240, 240)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(180, 10, " Key Financial Highlights (FY 2025)", border=1, ln=True, fill=True)
+    pdf.cell(0, 10, " 1. Financial Statements Overview & Variance", border=1, ln=True, fill=True)
     pdf.ln(5)
     
-    for k, v in ratios.items():
-        pdf.set_font("Arial", '', 12)
-        pdf.cell(60, 9, f"{k}:", border=0)
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(120, 9, f"{v}", border=0, ln=True)
+    # Table Header
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(65, 8, "Line Item", border=1)
+    pdf.cell(35, 8, "FY 2024", border=1, align='C')
+    pdf.cell(35, 8, "FY 2025", border=1, align='C')
+    pdf.cell(45, 8, "YoY Growth (%)", border=1, align='C', ln=True)
+    
+    # Table Rows
+    pdf.set_font("Arial", '', 10)
+    for index, row in df_display.iterrows():
+        pdf.cell(65, 8, str(index), border=1)
+        pdf.cell(35, 8, f"{row.iloc[0]:,.0f}", border=1, align='R')
+        pdf.cell(35, 8, f"{row.iloc[1]:,.0f}", border=1, align='R')
+        
+        val = row['YoY Growth (%)']
+        var_text = f"{val:.2f}%" if pd.notnull(val) else "N/A"
+        pdf.cell(45, 8, var_text, border=1, align='R', ln=True)
+        
     pdf.ln(8)
     
-    # Sensitivity Outlook
+    # 3. KEY PERFORMANCE RATIOS
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(180, 10, " Forward-Looking Outlook (Simulated)", border=1, ln=True, fill=True)
+    pdf.cell(0, 10, " 2. Key Performance Indicators (FY 2025)", border=1, ln=True, fill=True)
     pdf.ln(5)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(60, 8, "Projected Revenue:", border=0)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(120, 8, f"{rev_sim:,.2f} MAD", border=0, ln=True)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(60, 8, "Projected Margin:", border=0)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(120, 8, f"{margin_sim:.2f}%", border=0, ln=True)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(50, 8, "Net Margin:", border=0)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"{net_margin:.2f}%", border=0, ln=True)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(50, 8, "Return on Equity (ROE):", border=0)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"{roe:.2f}%", border=0, ln=True)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(50, 8, "Current Ratio:", border=0)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"{current_ratio:.2f}x", border=0, ln=True)
+    pdf.ln(8)
+    
+    # 4. SENSITIVITY OUTLOOK
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " 3. Scenario & Sensitivity Outlook", border=1, ln=True, fill=True)
+    pdf.ln(5)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 7, f"- Simulated Projected Revenue: {sim_rev:,.2f} MAD", ln=True)
+    pdf.cell(0, 7, f"- Simulated Projected Net Margin: {sim_margin:.2f}%", ln=True)
     pdf.ln(8)
 
-    # Investment Merits
+    # 5. DIAGNOSIS
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(180, 10, " Investment Merits & Diagnosis", border=1, ln=True, fill=True)
+    pdf.cell(0, 10, " 4. Expert Diagnosis & Recommendations", border=1, ln=True, fill=True)
     pdf.ln(5)
     pdf.set_font("Arial", '', 11)
+    
+    # Using w=0 makes it span the full available width automatically without bleeding off-page
     for note in diagnosis:
-        pdf.multi_cell(180, 8, txt=f" \x95 {note}")
+        pdf.set_x(15) 
+        pdf.multi_cell(0, 7, txt=f"\x95 {note}")
         
-    pdf.set_y(-25)
+    # Footer
+    pdf.set_y(-20)
     pdf.set_font("Arial", 'I', 9)
     pdf.set_text_color(150, 150, 150)
     pdf.line(15, 275, 195, 275)
-    pdf.cell(180, 10, "Strictly Confidential | M&A Advisory Desk - Z.ELAIDI Financial Hub", align='C')
+    pdf.cell(0, 10, "Strictly Confidential | M&A Advisory Desk - Z.ELAIDI Financial Hub", align='C')
     
     return bytes(pdf.output())
 
@@ -150,12 +174,9 @@ if uploaded_file:
             val = row['YoY Growth (%)']
             if pd.isna(val): return [''] * len(row)
             
-            if ('liability' in item or 'debt' in item) and val > 0:
-                color = '#d62728'
-            elif val > 0:
-                color = '#2ca02c'
-            else:
-                color = '#d62728'
+            if ('liability' in item or 'debt' in item) and val > 0: color = '#d62728'
+            elif val > 0: color = '#2ca02c'
+            else: color = '#d62728'
                 
             return [f'color: {color}' if col == 'YoY Growth (%)' else '' for col in row.index]
 
@@ -165,9 +186,7 @@ if uploaded_file:
             st.subheader("📋 Variance Analysis")
             st.dataframe(df_display.style.apply(color_variance, axis=1).format({'YoY Growth (%)': "{:.2f}%"}), use_container_width=True)
 
-            rev_24 = float(df_finance.loc["Revenue", col_24])
             rev_25 = float(df_finance.loc["Revenue", col_25])
-            net_24 = float(df_finance.loc["Net Income", col_24])
             net_25 = float(df_finance.loc["Net Income", col_25])
             ca_25 = float(df_finance.loc["Current Assets", col_25])
             cl_25 = float(df_finance.loc["Current Liabilities", col_25])
@@ -233,8 +252,8 @@ if uploaded_file:
         with col_chart:
             st.subheader("📈 YoY Progression")
             fig_yoy = go.Figure()
-            fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[rev_24, rev_25], name='Revenue', marker_color='#1f77b4'))
-            fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[net_24, net_25], name='Net Income', marker_color='#2ca02c'))
+            fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[float(df_finance.loc["Revenue", col_24]), rev_25], name='Revenue', marker_color='#1f77b4'))
+            fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[float(df_finance.loc["Net Income", col_24]), net_25], name='Net Income', marker_color='#2ca02c'))
             fig_yoy.update_layout(barmode='group', template="plotly_dark", height=250, margin=dict(l=0, r=0, t=30, b=0))
             st.plotly_chart(fig_yoy, use_container_width=True)
 
@@ -252,22 +271,19 @@ if uploaded_file:
                     "Current Ratio": round(current_ratio, 2), 
                     "Date": datetime.now().strftime('%Y-%m-%d %H:%M')
                 }
-                if save_history(st.session_state.user.id, st.session_state.user.email, session_data): 
-                    st.success("✅ Saved successfully!")
-                else: 
-                    st.error("⚠️ Failed to save.")
+                if save_history(st.session_state.user.id, st.session_state.user.email, session_data): st.success("✅ Saved successfully!")
+                else: st.error("⚠️ Failed to save.")
                     
         with c_action2:
-            ratios_dict = {
-                "Revenue": f"{rev_25:,.2f} MAD", 
-                "Net Margin": f"{user_net_margin:.2f}%", 
-                "ROE": f"{user_roe:.2f}%", 
-                "Current Ratio": f"{current_ratio:.2f}"
-            }
-            pdf_bytes = create_teaser_pdf(ratios_dict, selected_nbs, sim_rev, sim_margin)
-            b64_pdf = base64.b64encode(pdf_bytes).decode('latin-1')
-            href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="MA_Teaser_Project_Alpha.pdf" class="btn-pdf-teaser">📑 Download M&A Teaser</a>'
-            st.markdown(href, unsafe_allow_html=True)
+            pdf_bytes = create_rich_pdf(df_display, user_net_margin, user_roe, current_ratio, sim_rev, sim_margin, selected_nbs)
+            st.download_button(
+                label="📄 Download as a PDF",
+                data=pdf_bytes,
+                file_name="Detailed_Financial_Report.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                type="primary"
+            )
             
     except Exception as e:
         st.error(f"⚠️ Error processing file. Ensure strict template format. Details: {str(e)}")
