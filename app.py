@@ -127,6 +127,38 @@ else:
     # -----------------------------------------------------
     # CLEAN & MINIMALIST DASHBOARD
     # -----------------------------------------------------
+    
+    # --- NEW: TOP HEADER & USER OPTIONS ---
+    top_col1, top_col2 = st.columns([4, 1])
+    with top_col1:
+        # Show a personalized welcome message based on the email
+        user_name = st.session_state.user.email.split('@')[0].capitalize()
+        st.markdown(f"<h4 style='color: #e0e0e0; margin-top: 10px;'>👋 Welcome back, {user_name}</h4>", unsafe_allow_html=True)
+    
+    with top_col2:
+        # Create a dropdown popover for settings
+        with st.popover("⚙️ Settings & Profile", use_container_width=True):
+            st.markdown("**User Profile**")
+            st.write(f"📧 {st.session_state.user.email}")
+            st.divider()
+            
+            st.markdown("**Preferences**")
+            st.selectbox("Default Currency", ["MAD (Dirham)", "USD ($)", "EUR (€)"], label_visibility="collapsed")
+            st.selectbox("Report Language", ["English", "Français"], label_visibility="collapsed")
+            st.divider()
+            
+            st.markdown("**System**")
+            if st.button("📖 Platform Docs", use_container_width=True):
+                st.info("Documentation feature coming soon.")
+                
+            if st.button("🚪 Terminate Session", type="primary", use_container_width=True):
+                supabase.auth.sign_out()
+                st.session_state.user = None
+                st.rerun()
+                
+    st.markdown("<br>", unsafe_allow_html=True)
+    # -----------------------------------------------------
+
     st.markdown("""
     <div class="full-width-banner">
         <div class="banner-overlay"></div>
@@ -229,13 +261,3 @@ else:
             </div>
         </a>
         """, unsafe_allow_html=True)
-
-    st.markdown("---")
-    
-    # LOGOUT BUTTON
-    col_empty, col_logout = st.columns([5, 1])
-    with col_logout:
-        if st.button("🚪 Terminate Session", type="secondary", use_container_width=True):
-            supabase.auth.sign_out()
-            st.session_state.user = None
-            st.rerun()
