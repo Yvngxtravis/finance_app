@@ -2,76 +2,173 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# --- SECURITY: Redirect if not logged in ---
+# --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
     st.switch_page("app.py")
 
+# --- GLOBAL STATE INITIALIZATION ---
+lang = st.session_state.get("lang", "English")
+curr = st.session_state.get("currency", "MAD")
+rates = st.session_state.get("rates", {"MAD": 1.0, "USD": 0.10, "EUR": 0.09})
+syms = st.session_state.get("sym", {"MAD": "MAD", "USD": "$", "EUR": "€"})
+
+rate = rates[curr]
+sym = syms[curr]
+
+# --- TRANSLATION DICTIONARY ---
+t = {
+    "English": {
+        "title": "💼 M&A & Private Equity Deal Room",
+        "glos_title": "ℹ️ Glossary & Advanced Definitions",
+        "glos_mc": "**Monte Carlo Simulation:** A computational algorithm that relies on repeated random sampling to understand the impact of risk and uncertainty in the valuation.",
+        "glos_moic": "**MoIC (Multiple on Invested Capital):** Shows how much value an investment has generated (Exit Equity / Entry Equity).",
+        "sb_title": "🏢 Target Base Financials", "sb_info": "Input the target company's base financials here (in MAD).",
+        "b_rev": "Base Revenue (MAD)", "b_ebitda": "Base EBITDA (MAD)",
+        "capm_title": "⚙️ Advanced WACC Calculator",
+        "capm_def": "**Capital Asset Pricing Model (CAPM):** The CAPM is a financial model used to calculate the expected Return on Equity ($K_e$). It establishes a linear relationship between the required return of an investment and its systematic risk ($\\beta$).<br><br>**Formula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "rf": "Risk-Free Rate (%)", "rm": "Market Return (%)", "beta": "Beta (β)", "tax": "Tax Rate (%)",
+        "kd": "Cost of Debt (%)", "w_debt": "Debt Weighting (%)",
+        "ke_res": "Cost of Equity (Ke)", "kd_res": "Cost of Debt post-tax (Kd)", "wacc_res": "Implied WACC",
+        "capm_toggle": "Enable CAPM Calculation Mode", "wacc_slider": "WACC %",
+        "dcf_title": "📊 Standard DCF Engine",
+        "tg": "Terminal Growth %", "pg": "Projected Growth %", "fcfm": "FCF Margin %",
+        "ev": "Implied Enterprise Value (EV)",
+        "mc_btn": "🎲 Run Monte Carlo Simulation (10k Iterations)", "mc_run": "Running 10,000 simulations...",
+        "mc_chart": "Enterprise Value Probability Distribution", "freq": "Frequency", "ci": "75% Confidence Interval",
+        "lbo_title": "💰 LBO Quick-Modeler",
+        "entry_m": "Entry Multiple (x)", "exit_m": "Exit Multiple (x)", "debt_f": "Debt Funding %",
+        "pe_metrics": "Private Equity Metrics (5-Year Horizon)", "irr": "IRR", "moic": "MoIC"
+    },
+    "Français": {
+        "title": "💼 Salle des Marchés M&A & Private Equity",
+        "glos_title": "ℹ️ Glossaire et Définitions",
+        "glos_mc": "**Simulation Monte Carlo :** Algorithme informatique basé sur un échantillonnage aléatoire répété pour évaluer l'impact du risque et de l'incertitude sur la valorisation.",
+        "glos_moic": "**MoIC (Multiple sur le Capital Investi) :** Indique la valeur générée par un investissement (Capitaux Propres de Sortie / Capitaux Propres d'Entrée).",
+        "sb_title": "🏢 Données Financières de Base", "sb_info": "Saisissez les données financières de base de la cible (en MAD).",
+        "b_rev": "Revenus de Base (MAD)", "b_ebitda": "EBITDA de Base (MAD)",
+        "capm_title": "⚙️ Calculateur WACC Avancé (MEDAF)",
+        "capm_def": "**Modèle d'Évaluation des Actifs Financiers (MEDAF) :** Modèle financier utilisé pour calculer la rentabilité attendue des capitaux propres ($K_e$). Il établit une relation linéaire entre la rentabilité requise et le risque systématique ($\\beta$).<br><br>**Formule :** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "rf": "Taux Sans Risque (%)", "rm": "Rendement du Marché (%)", "beta": "Bêta (β)", "tax": "Taux d'Imposition (%)",
+        "kd": "Coût de la Dette (%)", "w_debt": "Pondération de la Dette (%)",
+        "ke_res": "Coût des Capitaux Propres (Ke)", "kd_res": "Coût de la Dette après impôts (Kd)", "wacc_res": "CMPC Implicite (WACC)",
+        "capm_toggle": "Activer le Mode de Calcul MEDAF", "wacc_slider": "CMPC (WACC) %",
+        "dcf_title": "📊 Moteur DCF Standard",
+        "tg": "Croissance Terminale %", "pg": "Croissance Projetée %", "fcfm": "Marge FCF %",
+        "ev": "Valeur d'Entreprise Implicite (VE)",
+        "mc_btn": "🎲 Lancer Simulation Monte Carlo (10k Itérations)", "mc_run": "Exécution de 10 000 simulations...",
+        "mc_chart": "Distribution de Probabilité de la Valeur d'Entreprise", "freq": "Fréquence", "ci": "Intervalle de Confiance à 75 %",
+        "lbo_title": "💰 Modélisateur LBO Rapide",
+        "entry_m": "Multiple d'Entrée (x)", "exit_m": "Multiple de Sortie (x)", "debt_f": "Financement par Dette %",
+        "pe_metrics": "Métriques Private Equity (Horizon 5 ans)", "irr": "TRI (IRR)", "moic": "Multiple (MoIC)"
+    },
+    "Español": {
+        "title": "💼 Sala de Fusiones y Capital Privado (M&A)",
+        "glos_title": "ℹ️ Glosario y Definiciones Avanzadas",
+        "glos_mc": "**Simulación Monte Carlo:** Algoritmo computacional que se basa en un muestreo aleatorio repetido para comprender el impacto del riesgo en la valoración.",
+        "glos_moic": "**MoIC (Múltiplo sobre Capital Invertido):** Muestra cuánto valor ha generado una inversión (Capital de Salida / Capital de Entrada).",
+        "sb_title": "🏢 Finanzas Base del Objetivo", "sb_info": "Ingrese las finanzas base de la empresa objetivo aquí (en MAD).",
+        "b_rev": "Ingresos Base (MAD)", "b_ebitda": "EBITDA Base (MAD)",
+        "capm_title": "⚙️ Calculadora WACC Avanzada",
+        "capm_def": "**Modelo de Valoración de Activos de Capital (CAPM):** El CAPM es un modelo financiero utilizado para calcular la rentabilidad esperada del capital ($K_e$).<br><br>**Fórmula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "rf": "Tasa Libre de Riesgo (%)", "rm": "Retorno del Mercado (%)", "beta": "Beta (β)", "tax": "Tasa Impositiva (%)",
+        "kd": "Costo de la Deuda (%)", "w_debt": "Ponderación de Deuda (%)",
+        "ke_res": "Costo del Capital (Ke)", "kd_res": "Costo de Deuda después de impuestos (Kd)", "wacc_res": "WACC Implícito",
+        "capm_toggle": "Habilitar Modo de Cálculo CAPM", "wacc_slider": "WACC %",
+        "dcf_title": "📊 Motor DCF Estándar",
+        "tg": "Crecimiento Terminal %", "pg": "Crecimiento Proyectado %", "fcfm": "Margen FCF %",
+        "ev": "Valor Empresarial Implícito (EV)",
+        "mc_btn": "🎲 Ejecutar Simulación Monte Carlo (10k Iteraciones)", "mc_run": "Ejecutando 10,000 simulaciones...",
+        "mc_chart": "Distribución de Probabilidad del Valor Empresarial", "freq": "Frecuencia", "ci": "Intervalo de Confianza del 75%",
+        "lbo_title": "💰 Modelador LBO Rápido",
+        "entry_m": "Múltiplo de Entrada (x)", "exit_m": "Múltiplo de Salida (x)", "debt_f": "Financiamiento de Deuda %",
+        "pe_metrics": "Métricas de Capital Privado (Horizonte 5 años)", "irr": "TIR (IRR)", "moic": "Múltiplo (MoIC)"
+    },
+    "العربية": {
+        "title": "💼 غرفة صفقات الاندماج والاستحواذ (M&A)",
+        "glos_title": "ℹ️ مسرد المصطلحات والتعاريف المتقدمة",
+        "glos_mc": "**محاكاة مونت كارلو:** خوارزمية حسابية تعتمد على أخذ عينات عشوائية متكررة لفهم تأثير المخاطر وعدم اليقين في التقييم.",
+        "glos_moic": "**MoIC (مضاعف رأس المال المستثمر):** يوضح مقدار القيمة التي حققها الاستثمار (حقوق الملكية عند التخارج / حقوق الملكية عند الدخول).",
+        "sb_title": "🏢 البيانات المالية الأساسية للشركة", "sb_info": "أدخل البيانات المالية الأساسية للشركة المستهدفة هنا (بالدرهم المغربي).",
+        "b_rev": "الإيرادات الأساسية (MAD)", "b_ebitda": "الأرباح قبل الفوائد والضرائب - EBITDA (MAD)",
+        "capm_title": "⚙️ حاسبة WACC المتقدمة (CAPM)",
+        "capm_def": "**نموذج تسعير الأصول الرأسمالية (CAPM):** هو نموذج مالي يُستخدم لحساب العائد المتوقع على حقوق الملكية ($K_e$). ويقيم علاقة خطية بين العائد المطلوب للاستثمار والمخاطر المنهجية ($\\beta$).<br><br>**المعادلة:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "rf": "المعدل الخالي من المخاطر (%)", "rm": "عائد السوق (%)", "beta": "بيتا (β)", "tax": "نسبة الضريبة (%)",
+        "kd": "تكلفة الدين (%)", "w_debt": "وزن الدين (%)",
+        "ke_res": "تكلفة حقوق الملكية (Ke)", "kd_res": "تكلفة الدين بعد الضريبة (Kd)", "wacc_res": "المتوسط المرجح لتكلفة رأس المال (WACC)",
+        "capm_toggle": "تمكين وضع حساب CAPM", "wacc_slider": "المتوسط المرجح لتكلفة رأس المال (WACC) %",
+        "dcf_title": "📊 محرك خصم التدفقات النقدية (DCF)",
+        "tg": "النمو النهائي (Terminal Growth) %", "pg": "النمو المتوقع %", "fcfm": "هامش التدفق النقدي الحر (FCF) %",
+        "ev": "القيمة المؤسسية الضمنية (EV)",
+        "mc_btn": "🎲 تشغيل محاكاة مونت كارلو (10,000 تكرار)", "mc_run": "يتم الآن تشغيل 10,000 محاكاة...",
+        "mc_chart": "التوزيع الاحتمالي للقيمة المؤسسية", "freq": "التردد", "ci": "فترة ثقة 75%",
+        "lbo_title": "💰 نموذج الاستحواذ المدعوم بالقروض (LBO)",
+        "entry_m": "مضاعف الدخول (x)", "exit_m": "مضاعف التخارج (x)", "debt_f": "نسبة تمويل الديون %",
+        "pe_metrics": "مقاييس الأسهم الخاصة (أفق 5 سنوات)", "irr": "معدل العائد الداخلي (IRR)", "moic": "مضاعف رأس المال (MoIC)"
+    }
+}
+txt = t[lang]
+
 # --- UI STYLING & CSS HACKS ---
-st.markdown("""
+rtl_css = ""
+if lang == "العربية":
+    rtl_css = """
+    .block-container { direction: rtl; text-align: right; }
+    [data-testid="stSidebar"], [data-testid="stSidebarNav"], [data-testid="collapsedControl"], [data-testid="stHeader"] { direction: ltr !important; text-align: left !important; }
+    """
+
+st.markdown(f"""
 <style>
-    /* Rename Sidebar 'app' to 'Home' */
-    [data-testid="stSidebarNav"] li:first-child a span { display: none !important; }
-    [data-testid="stSidebarNav"] li:first-child a::after { content: "🏠 Home"; font-size: 15px; margin-left: 0px; }
-    
-    .ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;}
-    .ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
-    .ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
+    [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
+    [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
+    .ma-card {{ background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;}}
+    .ma-card-title {{ color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }}
+    .ma-card-value {{ color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }}
+    {rtl_css}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("💼 M&A & Private Equity Deal Room")
+st.title(txt["title"])
 
-with st.expander("ℹ️ Glossary & Advanced Definitions"):
-    st.markdown("""
-    * **Monte Carlo Simulation:** A computational algorithm that relies on repeated random sampling to understand the impact of risk and uncertainty in the valuation.
-    * **MoIC (Multiple on Invested Capital):** Shows how much value an investment has generated (Exit Equity / Entry Equity).
-    """)
+with st.expander(txt["glos_title"]):
+    st.markdown(txt["glos_mc"])
+    st.markdown(txt["glos_moic"])
 
-# --- SIDEBAR INPUTS (PROXY DATA) ---
-st.sidebar.markdown("### 🏢 Target Base Financials")
-st.sidebar.info("Input the target company's base financials here to feed the models.")
-base_rev = st.sidebar.number_input("Base Revenue (MAD)", value=5000000.0, step=100000.0)
-base_ebitda = st.sidebar.number_input("Base EBITDA (MAD)", value=1200000.0, step=50000.0)
+# --- SIDEBAR INPUTS (NATIVE MAD) ---
+st.sidebar.markdown(f"### {txt['sb_title']}")
+st.sidebar.info(txt["sb_info"])
+base_rev = st.sidebar.number_input(txt["b_rev"], value=5000000.0, step=100000.0)
+base_ebitda = st.sidebar.number_input(txt["b_ebitda"], value=1200000.0, step=50000.0)
 
 # --- ADVANCED WACC CALCULATOR (CAPM) ---
-st.subheader("⚙️ Advanced WACC Calculator")
+st.subheader(txt["capm_title"])
 
-# NEW: CAPM DEFINITION BOX
-st.info("""
-**Capital Asset Pricing Model (CAPM)** The CAPM is a financial model used to calculate the expected Return on Equity ($K_e$). It establishes a linear relationship between the required return of an investment and its systematic risk ($\\beta$).
+st.info(txt["capm_def"])
 
-**Formula:** $K_e = R_f + \\beta \\times (R_m - R_f)$
-* **$R_f$:** Risk-Free Rate (e.g., Moroccan 10-Year Treasury Bond)
-* **$\\beta$:** Beta (Volatility of the asset relative to the market)
-* **$R_m$:** Expected Market Return
-""")
-
-use_capm = st.toggle("Enable CAPM Calculation Mode")
+use_capm = st.toggle(txt["capm_toggle"])
 
 if use_capm:
     with st.container(border=True):
         c1, c2, c3, c4 = st.columns(4)
-        rf = c1.number_input("Risk-Free Rate (%)", value=4.0, help="E.g., Moroccan 10Y Treasury Bond") / 100
-        rm = c2.number_input("Market Return (%)", value=10.0, help="Expected return of the CSE") / 100
-        beta = c3.number_input("Beta (β)", value=1.2, help="Volatility relative to the market")
-        tax = c4.number_input("Tax Rate (%)", value=30.0) / 100
+        rf = c1.number_input(txt["rf"], value=4.0) / 100
+        rm = c2.number_input(txt["rm"], value=10.0) / 100
+        beta = c3.number_input(txt["beta"], value=1.2)
+        tax = c4.number_input(txt["tax"], value=30.0) / 100
         
         st.markdown("---")
         
         c5, c6 = st.columns(2)
-        kd_raw = c5.number_input("Cost of Debt (%)", value=6.0) / 100
-        debt_weight = c6.slider("Debt Weighting (%)", 0.0, 100.0, 40.0) / 100
+        kd_raw = c5.number_input(txt["kd"], value=6.0) / 100
+        debt_weight = c6.slider(txt["w_debt"], 0.0, 100.0, 40.0) / 100
         equity_weight = 1 - debt_weight
         
-        # Math Engine
         ke = rf + beta * (rm - rf)
         kd = kd_raw * (1 - tax)
         wacc = (ke * equity_weight) + (kd * debt_weight)
         
-        st.success(f"**Cost of Equity (Ke):** {ke*100:.2f}% &nbsp; | &nbsp; **Cost of Debt post-tax (Kd):** {kd*100:.2f}%")
-        st.markdown(f"<h3 style='text-align:center; color:#2ca02c;'>🎯 Implied WACC: {wacc*100:.2f}%</h3>", unsafe_allow_html=True)
+        st.success(f"**{txt['ke_res']}:** {ke*100:.2f}% &nbsp; | &nbsp; **{txt['kd_res']}:** {kd*100:.2f}%")
+        st.markdown(f"<h3 style='text-align:center; color:#2ca02c;'>🎯 {txt['wacc_res']}: {wacc*100:.2f}%</h3>", unsafe_allow_html=True)
 else:
-    wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5) / 100
+    wacc = st.slider(txt["wacc_slider"], 5.0, 20.0, 10.0, 0.5) / 100
 
 st.markdown("---")
 
@@ -79,25 +176,28 @@ st.markdown("---")
 col_dcf, col_lbo = st.columns(2, gap="large")
 
 with col_dcf:
-    st.subheader("📊 Standard DCF Engine")
-    tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1) / 100
-    proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0) / 100
-    margin = st.slider("FCF Margin %", 1.0, 30.0, 15.0, 1.0) / 100
+    st.subheader(txt["dcf_title"])
+    tg = st.slider(txt["tg"], 0.0, 5.0, 2.0, 0.1) / 100
+    proj_growth = st.slider(txt["pg"], -10.0, 30.0, 5.0, 1.0) / 100
+    margin = st.slider(txt["fcfm"], 1.0, 30.0, 15.0, 1.0) / 100
 
     # DCF Math
     cfs = [base_rev * ((1 + proj_growth)**i) * margin for i in range(1, 6)]
     ev = sum([cf / ((1 + wacc)**(i+1)) for i, cf in enumerate(cfs)]) + (((cfs[-1] * (1 + tg)) / (wacc - tg)) / ((1 + wacc)**5) if wacc > tg else 0)
     
+    # Currency conversion for output
+    ev_converted = ev * rate
+    
     st.markdown(f"""
     <div class="ma-card" style="border-left: 4px solid #1f77b4;">
-        <div class="ma-card-title">Implied Enterprise Value (EV)</div>
-        <div class="ma-card-value">{ev:,.2f} MAD</div>
+        <div class="ma-card-title">{txt['ev']}</div>
+        <div class="ma-card-value">{ev_converted:,.2f} {sym}</div>
     </div>
     """, unsafe_allow_html=True)
     
     # 🎲 MONTE CARLO SIMULATION
-    if st.button("🎲 Run Monte Carlo Simulation (10k Iterations)", use_container_width=True, type="primary"):
-        with st.spinner("Running 10,000 simulations..."):
+    if st.button(txt["mc_btn"], use_container_width=True, type="primary"):
+        with st.spinner(txt["mc_run"]):
             np.random.seed(42)
             sim_growths = np.random.normal(proj_growth, 0.02, 10000) 
             sim_margins = np.random.normal(margin, 0.02, 10000) 
@@ -106,23 +206,23 @@ with col_dcf:
             for g, m in zip(sim_growths, sim_margins):
                 s_cfs = [base_rev * ((1 + g)**i) * m for i in range(1, 6)]
                 s_ev = sum([cf / ((1 + wacc)**(i+1)) for i, cf in enumerate(s_cfs)]) + (((s_cfs[-1] * (1 + tg)) / (wacc - tg)) / ((1 + wacc)**5) if wacc > tg else 0)
-                sim_evs.append(s_ev)
+                sim_evs.append(s_ev * rate) # Apply currency rate to each simulation
             
             fig_mc = go.Figure(data=[go.Histogram(x=sim_evs, nbinsx=50, marker_color='#c1272d')])
-            fig_mc.update_layout(title="Enterprise Value Probability Distribution", template="plotly_dark", xaxis_title="EV (MAD)", yaxis_title="Frequency", height=350)
+            fig_mc.update_layout(title=txt["mc_chart"], template="plotly_dark", xaxis_title=f"EV ({sym})", yaxis_title=txt["freq"], height=350)
             st.plotly_chart(fig_mc, use_container_width=True)
             
             perc_25, perc_75 = np.percentile(sim_evs, 25), np.percentile(sim_evs, 75)
-            st.caption(f"**75% Confidence Interval:** {perc_25:,.0f} MAD to {perc_75:,.0f} MAD")
+            st.caption(f"**{txt['ci']}:** {perc_25:,.0f} {sym} - {perc_75:,.0f} {sym}")
 
 with col_lbo:
-    st.subheader("💰 LBO Quick-Modeler")
+    st.subheader(txt["lbo_title"])
     c_l1, c_l2 = st.columns(2)
-    with c_l1: entry_mult = st.number_input("Entry Multiple (x)", 3.0, 15.0, 6.0, 0.5)
-    with c_l2: exit_mult = st.number_input("Exit Multiple (x)", 3.0, 15.0, 6.0, 0.5)
-    debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0) / 100
+    with c_l1: entry_mult = st.number_input(txt["entry_m"], 3.0, 15.0, 6.0, 0.5)
+    with c_l2: exit_mult = st.number_input(txt["exit_m"], 3.0, 15.0, 6.0, 0.5)
+    debt_pct = st.slider(txt["debt_f"], 0.0, 90.0, 60.0, 5.0) / 100
 
-    # LBO Math
+    # LBO Math (Multiples & Percentages, independent of currency)
     entry_ev = base_ebitda * entry_mult
     debt = entry_ev * debt_pct
     equity = entry_ev - debt
@@ -134,7 +234,7 @@ with col_lbo:
     
     st.markdown(f"""
     <div class="ma-card" style="border-left: 4px solid #9467bd;">
-        <div class="ma-card-title">Private Equity Metrics (5-Year Horizon)</div>
-        <div class="ma-card-value" style="font-size: 1.2rem;">IRR: {irr:.2f}% &nbsp; | &nbsp; MoIC: {moic:.2f}x</div>
+        <div class="ma-card-title">{txt['pe_metrics']}</div>
+        <div class="ma-card-value" style="font-size: 1.2rem;">{txt['irr']}: {irr:.2f}% &nbsp; | &nbsp; {txt['moic']}: {moic:.2f}x</div>
     </div>
     """, unsafe_allow_html=True)
