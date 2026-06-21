@@ -159,74 +159,139 @@ def get_live_market_data():
         return df
     except: return None
 
-def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_table, sim_data):
+# FIXED & ENHANCED PDF GENERATOR (Pro Edition)
+def create_detailed_pdf(company_ratios, expert_diagnosis, sector_avg_pe, df_table, sim_data, user_email):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_margins(10, 10, 10)
+    pdf.set_margins(12, 15, 12) 
     
-    pdf.set_fill_color(193, 39, 45)
-    pdf.rect(0, 0, 210, 35, 'F')
-    pdf.set_y(12)
-    pdf.set_font("Arial", 'B', 22)
+    # ---------------- HEADER ----------------
+    pdf.set_fill_color(139, 0, 0) 
+    pdf.rect(0, 0, 210, 40, 'F')
+    
+    pdf.set_y(15)
+    pdf.set_font("Arial", 'B', 24)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 10, "FINANCIAL & EQUITY RESEARCH REPORT", ln=True, align='C')
+    pdf.cell(0, 10, "EQUITY RESEARCH & FINANCIAL REPORT", ln=True, align='C')
     
+    # ---------------- META INFO ----------------
     pdf.set_text_color(0, 0, 0)
     pdf.set_y(45)
-    pdf.set_font("Arial", 'I', 11)
-    pdf.cell(0, 10, f"Generated automatically on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='R')
-    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(100, 6, f"Prepared by: {user_email}", ln=False)
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 6, f"Date: {datetime.now().strftime('%B %d, %Y - %H:%M')}", ln=True, align='R')
+    pdf.line(12, 53, 198, 53)
+    pdf.ln(8)
     
-    pdf.set_fill_color(230, 230, 230)
+    # ---------------- SECTION 1: VARIANCE ----------------
+    pdf.set_fill_color(240, 240, 240)
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, " 1. Financial Statement Variance Data", border=1, ln=True, fill=True)
-    pdf.ln(5)
+    pdf.cell(0, 10, " 1. Financial Statement Variance Analysis", border=1, ln=True, fill=True)
+    pdf.ln(4)
     
     pdf.set_font("Arial", 'B', 10)
-    pdf.set_fill_color(200, 200, 200)
-    pdf.cell(55, 8, "Line Item", border=1, align='C', fill=True)
-    pdf.cell(45, 8, "2024", border=1, align='C', fill=True)
-    pdf.cell(45, 8, "2025", border=1, align='C', fill=True)
-    pdf.cell(45, 8, "YoY Growth (%)", border=1, ln=True, align='C', fill=True)
+    pdf.set_fill_color(220, 220, 220)
+    pdf.cell(50, 8, "Line Item", border=1, align='C', fill=True)
+    pdf.cell(45, 8, "FY 2024 (MAD)", border=1, align='C', fill=True)
+    pdf.cell(45, 8, "FY 2025 (MAD)", border=1, align='C', fill=True)
+    pdf.cell(46, 8, "YoY Growth (%)", border=1, ln=True, align='C', fill=True)
     
     pdf.set_font("Arial", '', 10)
     for index, row in df_table.iterrows():
-        pdf.cell(55, 8, str(index), border=1)
+        pdf.cell(50, 8, str(index), border=1)
         pdf.cell(45, 8, f"{row.iloc[0]:,.0f}", border=1, align='R')
         pdf.cell(45, 8, f"{row.iloc[1]:,.0f}", border=1, align='R')
         val = row['YoY Growth (%)']
         growth_str = f"{val:.2f}%" if pd.notna(val) else "N/A"
-        pdf.cell(45, 8, growth_str, border=1, ln=True, align='R')
+        pdf.cell(46, 8, growth_str, border=1, ln=True, align='R')
     pdf.ln(8)
 
+    # ---------------- SECTION 2: RATIOS ----------------
     pdf.set_font("Arial", 'B', 14)
-    pdf.set_fill_color(230, 230, 230)
-    pdf.cell(0, 10, " 2. Key Performance Ratios", border=1, ln=True, fill=True)
-    pdf.ln(5)
-    pdf.set_font("Arial", '', 12)
-    for key, value in company_ratios.items():
-        pdf.cell(80, 8, f"{key}:", border=0)
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 8, f"{value}", border=0, ln=True)
-        pdf.set_font("Arial", '', 12)
+    pdf.set_fill_color(240, 240, 240)
+    pdf.cell(0, 10, " 2. Key Performance Metrics", border=1, ln=True, fill=True)
+    pdf.ln(4)
+    pdf.set_font("Arial", '', 11)
+    
+    items = list(company_ratios.items())
+    for i in range(0, len(items), 2):
+        k1, v1 = items[i]
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(40, 8, f"{k1}:", border=0)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(50, 8, f"{v1}", border=0)
+        
+        if i + 1 < len(items):
+            k2, v2 = items[i+1]
+            pdf.set_font("Arial", '', 11)
+            pdf.cell(40, 8, f"{k2}:", border=0)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(50, 8, f"{v2}", border=0, ln=True)
+        else:
+            pdf.ln(8)
     pdf.ln(8)
     
+    # ---------------- SECTION 3: DIAGNOSIS ----------------
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, " 3. Expert Diagnosis & Vulnerabilities", border=1, ln=True, fill=True)
-    pdf.ln(5)
+    pdf.ln(4)
     pdf.set_font("Arial", '', 11)
     for note in expert_diagnosis:
-        pdf.multi_cell(190, 8, txt=f"> {note}")
+        pdf.multi_cell(186, 7, txt=f" \x95 {note}")
     pdf.ln(8)
     
+    # ---------------- SECTION 4: STRATEGY ----------------
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, " 4. Sensitivity Simulation & Market Benchmark", border=1, ln=True, fill=True)
-    pdf.ln(5)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 8, f"- Simulated Future Revenue: {sim_data['rev']:,.2f} MAD", ln=True)
-    pdf.cell(0, 8, f"- Simulated Future Net Margin: {sim_data['margin']:.2f}%", ln=True)
-    pdf.ln(5)
-    pdf.multi_cell(190, 8, txt=f"The company's performance was evaluated against the Casablanca Stock Exchange (CSE) BTP sector. The average sector P/E Ratio currently stands at {sector_avg_pe:.2f}.")
+    pdf.cell(0, 10, " 4. Strategic Recommendations (M&A Focus)", border=1, ln=True, fill=True)
+    pdf.ln(4)
+    pdf.set_font("Arial", '', 11)
+    
+    margin_val = float(company_ratios["Net Margin"].replace("%", ""))
+    if margin_val > 10:
+        advice = [
+            "The company demonstrates strong pricing power and cost control. Highly attractive for Private Equity LBOs.",
+            "Consider leveraging the strong balance sheet for strategic acquisitions (Bolt-on M&A) in the BTP sector.",
+            "Dividend payout capacity is solid. Focus on maintaining working capital efficiency."
+        ]
+    else:
+        advice = [
+            "Margin compression observed. Urgent need to implement operational restructuring before initiating any M&A sell-side process.",
+            "Review cost structure (COGS & SG&A) to improve EBITDA generation.",
+            "Refinancing existing debt could improve liquidity and ease pressure on current cash reserves."
+        ]
+        
+    for rec in advice:
+        pdf.multi_cell(186, 7, txt=f" \x95 {rec}")
+    pdf.ln(8)
+    
+    # ---------------- SECTION 5: SENSITIVITY ----------------
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " 5. Sensitivity Simulation & Market Benchmark", border=1, ln=True, fill=True)
+    pdf.ln(4)
+    pdf.set_font("Arial", '', 11)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(60, 8, "Simulated Future Revenue:", border=0)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"{sim_data['rev']:,.2f} MAD", border=0, ln=True)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(60, 8, "Simulated Net Margin:", border=0)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 8, f"{sim_data['margin']:.2f}%", border=0, ln=True)
+    
+    pdf.ln(4)
+    pdf.set_font("Arial", 'I', 10)
+    pdf.set_text_color(80, 80, 80)
+    pdf.multi_cell(186, 6, txt=f"Note: The company's performance was evaluated against the Casablanca Stock Exchange (CSE) BTP sector. The average sector P/E Ratio currently stands at {sector_avg_pe:.2f}x.")
+    
+    # ---------------- FOOTER ----------------
+    pdf.set_y(-20)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.line(12, 280, 198, 280)
+    pdf.cell(0, 10, "Confidential | Generated via Z.ELAIDI Financial Hub | Not for public distribution without authorization.", align='C')
     
     return bytes(pdf.output())
 
