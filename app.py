@@ -10,12 +10,14 @@ import numpy as np
 from datetime import datetime
 import io
 import json
+import base64
+from fpdf import FPDF
 from supabase import create_client
 
 # ==========================================
 # 1. SUPABASE CONFIGURATION
 # ==========================================
-SUPABASE_URL = "https://julktnrcpxenpefpxeqh.supabase.co"
+SUPABASE_URL = "https://jultknrcpxenpefpxeqh.supabase.co"
 SUPABASE_KEY = "sb_publishable_uZMzGu6xCTr5DRFCJHM08g_DFHNC4Hv"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -32,11 +34,16 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .admin-badge { background-color: #c1272d; color: white; padding: 5px 10px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; display: inline-block; margin-bottom: 10px; }
+.ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
+.ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
+.ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
+.btn-pdf { background-color: #c1272d; color: white; padding: 10px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+.btn-pdf:hover { background-color: #a02025; color: white; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. DATABASE & DATA HELPERS
+# 3. DATABASE, DATA HELPERS & PDF
 # ==========================================
 def save_history(user_id, email, data_dict):
     try:
@@ -73,13 +80,46 @@ def get_live_market_data():
         return df
     except: return None
 
+def create_pdf(metrics_dict):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_fill_color(193, 39, 45)
+    pdf.rect(0, 0, 210, 35, 'F')
+    pdf.set_y(12)
+    pdf.set_font("Arial", 'B', 22)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(0, 10, "FINANCIAL ANALYTICS REPORT", ln=True, align='C')
+    
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(45)
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 10, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='R')
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_fill_color(230, 230, 230)
+    pdf.cell(0, 10, " Key Performance Metrics", border=1, ln=True, fill=True)
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", '', 12)
+    for key, value in metrics_dict.items():
+        pdf.cell(80, 10, f"{key}:", border=0)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, f"{value}", border=0, ln=True)
+        pdf.set_font("Arial", '', 12)
+    
+    pdf.set_y(-25)
+    pdf.set_font("Arial", 'I', 9)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 10, "Generated via Z.ELAIDI Financial Hub", align='C')
+    return pdf.output(dest='S').encode('latin-1')
+
 # ==========================================
-# 4. AUTHENTICATION MODULE (WITH REAL ERROR LOGGING)
+# 4. AUTHENTICATION MODULE
 # ==========================================
 def auth_ui():
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.5, 1])
-    
     with col2:
         st.markdown("<h2 style='text-align: left; color: white; border-top: 4px solid #c1272d; padding-top: 15px;'>SYSTEM ACCESS</h2>", unsafe_allow_html=True)
         choice = st.radio("Action", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
@@ -92,16 +132,12 @@ def auth_ui():
                     res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                     st.session_state.user = res.user
                     st.rerun()
-                except Exception as e:
-                    # NOW IT WILL SHOW THE EXACT REAL ERROR
-                    st.error(f"Login Error: {str(e)}")
+                except Exception as e: st.error(f"Login Error: {str(e)}")
             else:
                 try:
                     supabase.auth.sign_up({"email": email, "password": password})
                     st.success("Account created successfully. Switch to 'Login' to enter.")
-                except Exception as e:
-                    # NOW IT WILL SHOW THE EXACT REAL ERROR
-                    st.error(f"Sign Up Error: {str(e)}")
+                except Exception as e: st.error(f"Sign Up Error: {str(e)}")
 
 # ==========================================
 # 5. MAIN APPLICATION
@@ -116,7 +152,6 @@ def main_app():
     </div>
     """, unsafe_allow_html=True)
 
-    # Sidebar Profile
     with st.sidebar:
         if is_admin:
             st.markdown('<div class="admin-badge">SYSTEM ADMIN</div>', unsafe_allow_html=True)
@@ -132,7 +167,6 @@ def main_app():
             st.session_state.user = None
             st.rerun()
 
-    # TABS
     tab1, tab2, tab3, tab4, tab6, tab5 = st.tabs([
         "📈 Corporate Analysis", "🏗️ BTP Benchmark", "💼 M&A Valuation", 
         "💹 Live Charts", "🗄️ My History", "👤 About Creator"
@@ -140,8 +174,7 @@ def main_app():
     df_live = get_live_market_data()
     
     has_data = False
-    user_net_margin = 0
-    user_roe = 0
+    rev_25 = net_25 = user_net_margin = user_roe = current_ratio = 0
 
     # --- TAB 1: UPLOAD & ANALYSIS ---
     with tab1:
@@ -178,8 +211,7 @@ def main_app():
                     cr3.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_roe, number={'suffix': "%"}, title={'text': "ROE"}, gauge={'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}})).update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
 
                 with right_col:
-                    st.subheader("💾 Database Operations")
-                    st.write("Save these metrics to your profile history.")
+                    st.subheader("💾 Database & Reports")
                     if st.button("Save Analysis to My History", use_container_width=True):
                         session_data = {
                             "Revenue": rev_25, "Net Margin": round(user_net_margin, 2), "ROE": round(user_roe, 2),
@@ -187,8 +219,22 @@ def main_app():
                         }
                         if save_history(st.session_state.user.id, st.session_state.user.email, session_data):
                             st.success("✅ Saved successfully!")
-                        else:
-                            st.error("⚠️ Failed to save.")
+                        else: st.error("⚠️ Failed to save.")
+                    
+                    # PDF Generation Button
+                    try:
+                        metrics = {
+                            "Revenue (MAD)": f"{rev_25:,.2f}",
+                            "Net Margin (%)": f"{user_net_margin:.2f}%",
+                            "ROE (%)": f"{user_roe:.2f}%",
+                            "Current Ratio": f"{current_ratio:.2f}"
+                        }
+                        pdf_bytes = create_pdf(metrics)
+                        b64_pdf = base64.b64encode(pdf_bytes).decode('latin-1')
+                        href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="Financial_Report_Z_ELAIDI.pdf" class="btn-pdf">📄 Download PDF Report</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error("Error generating PDF. Please check if fpdf is installed.")
             except Exception as e:
                 st.error("⚠️ Error processing file. Ensure strict template format.")
 
@@ -207,27 +253,39 @@ def main_app():
     # --- TAB 3: M&A DEAL ROOM ---
     with tab3:
         st.header("💼 M&A & Private Equity Deal Room")
+        if not has_data:
+            st.info("💡 Upload your Financial Template in Tab 1 to populate data. Using proxy data for now.")
+            
         base_rev = rev_25 if has_data else 5000000.0
         base_ebitda = net_25 * 1.3 if has_data else 1200000.0
 
         col_dcf, col_lbo = st.columns(2, gap="large")
+        
         with col_dcf:
             st.subheader("📊 DCF Valuation Engine")
-            wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5) / 100
-            tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1) / 100
-            proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0) / 100
-            margin = st.slider("Cash Flow Margin %", 1.0, 30.0, 15.0, 1.0) / 100
+            # Added helpful tooltips (i) to all inputs
+            wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5, help="Weighted Average Cost of Capital: The minimum average return expected by investors.") / 100
+            tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1, help="The constant rate at which the company is expected to grow forever after the projection period.") / 100
+            proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0, help="Estimated annual growth rate for the 5-year projection period.") / 100
+            margin = st.slider("Cash Flow Margin %", 1.0, 30.0, 15.0, 1.0, help="The percentage of revenue converted into Free Cash Flow.") / 100
 
             cfs = [base_rev * ((1 + proj_growth)**i) * margin for i in range(1, 6)]
             ev = sum([cf / ((1 + wacc)**(i+1)) for i, cf in enumerate(cfs)]) + (((cfs[-1] * (1 + tg)) / (wacc - tg)) / ((1 + wacc)**5) if wacc > tg else 0)
-            st.success(f"Implied Enterprise Value (EV): {ev:,.2f} MAD")
+            
+            # Professional Card instead of st.success
+            st.markdown(f"""
+            <div class="ma-card" style="border-left: 4px solid #1f77b4;">
+                <div class="ma-card-title">Implied Enterprise Value (EV)</div>
+                <div class="ma-card-value">{ev:,.2f} MAD</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         with col_lbo:
             st.subheader("💰 LBO Quick-Modeler")
             c_l1, c_l2 = st.columns(2)
-            with c_l1: entry_mult = st.number_input("Entry Multiple", 3.0, 15.0, 6.0, 0.5)
-            with c_l2: exit_mult = st.number_input("Exit Multiple", 3.0, 15.0, 6.0, 0.5)
-            debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0) / 100
+            with c_l1: entry_mult = st.number_input("Entry Multiple (x)", 3.0, 15.0, 6.0, 0.5, help="Purchase price expressed as a multiple of EBITDA.")
+            with c_l2: exit_mult = st.number_input("Exit Multiple (x)", 3.0, 15.0, 6.0, 0.5, help="Expected selling price expressed as a multiple of EBITDA at year 5.")
+            debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0, help="Percentage of the acquisition funded by debt.") / 100
 
             entry_ev = base_ebitda * entry_mult
             debt = entry_ev * debt_pct
@@ -237,7 +295,14 @@ def main_app():
 
             moic = exit_equity / equity if equity > 0 else 0
             irr = ((moic**(1/5) - 1) * 100) if moic > 0 else 0
-            st.info(f"Private Equity IRR (5-Year): {irr:.2f}% | MoIC: {moic:.2f}x")
+            
+            # Professional Card instead of st.info
+            st.markdown(f"""
+            <div class="ma-card" style="border-left: 4px solid #9467bd;">
+                <div class="ma-card-title">Private Equity Metrics (5-Year Horizon)</div>
+                <div class="ma-card-value" style="font-size: 1.2rem;">IRR: {irr:.2f}% &nbsp; | &nbsp; MoIC: {moic:.2f}x</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     # --- TAB 4: CHARTS ---
     with tab4:
