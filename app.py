@@ -25,8 +25,6 @@ except Exception as e:
 
 if "user" not in st.session_state:
     st.session_state.user = None
-if "lang" not in st.session_state:
-    st.session_state.lang = "English"
 
 # ==========================================
 # 2. DYNAMIC CSS & UI HACKS
@@ -34,35 +32,30 @@ if "lang" not in st.session_state:
 # Hack to rename 'app' to '🏠 Home' in the sidebar
 st.markdown("""
 <style>
-    [data-testid="stSidebarNav"] li:first-child a span {
-        display: none !important;
-    }
-    [data-testid="stSidebarNav"] li:first-child a::after {
-        content: "🏠 Home";
-        font-size: 15px;
-        margin-left: 0px;
-    }
+    [data-testid="stSidebarNav"] li:first-child a span { display: none !important; }
+    [data-testid="stSidebarNav"] li:first-child a::after { content: "🏠 Home"; font-size: 15px; margin-left: 0px; }
+    
+    /* Global Styles */
+    .full-width-banner { position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2rem; border-radius: 10px; border-left: 5px solid #c1272d; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .banner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(193,39,45,0.2) 100%); }
+    .banner-content { position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }
+    .moroccan-badge { display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }
+    
+    /* Colored Cards */
+    .card-blue { background-color: #0e1621; border-left: 4px solid #1f77b4; padding: 15px; border-radius: 5px; height: 110px; margin-bottom: 15px; }
+    .card-green { background-color: #0d1a10; border-left: 4px solid #2ca02c; padding: 15px; border-radius: 5px; height: 110px; margin-bottom: 15px; }
+    .card-purple { background-color: #1a0f24; border-left: 4px solid #9467bd; padding: 15px; border-radius: 5px; height: 110px; margin-bottom: 15px; }
+    .card-red { background-color: #240f0f; border-left: 4px solid #d62728; padding: 15px; border-radius: 5px; height: 110px; margin-bottom: 15px; }
+    .card-orange { background-color: #24180f; border-left: 4px solid #ff7f0e; padding: 15px; border-radius: 5px; height: 110px; margin-bottom: 15px; }
+    .card-teal { background-color: #0f2424; border-left: 4px solid #17becf; padding: 15px; border-radius: 5px; height: 110px; margin-bottom: 15px; }
+    
+    .card-title { margin: 0; font-size: 1.1rem; font-weight: bold; }
+    .card-text { color: #b3b3b3; font-size: 0.85rem; margin-top: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
-# Hide sidebar completely if user is NOT logged in
 if st.session_state.user is None:
-    st.markdown("""
-    <style>
-        [data-testid="stSidebar"] { display: none !important; }
-        [data-testid="collapsedControl"] { display: none !important; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# General Styles
-st.markdown("""
-<style>
-.full-width-banner { position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2rem; border-radius: 10px; border-left: 5px solid #c1272d; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-.banner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(193,39,45,0.2) 100%); }
-.banner-content { position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }
-.moroccan-badge { display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }
-</style>
-""", unsafe_allow_html=True)
+    st.markdown("<style>[data-testid='stSidebar'] { display: none !important; } [data-testid='collapsedControl'] { display: none !important; }</style>", unsafe_allow_html=True)
 
 # ==========================================
 # 3. DATA HELPER FOR DASHBOARD
@@ -74,8 +67,7 @@ def get_dashboard_data():
         df["PE_Ratio"] = pd.to_numeric(df["PE_Ratio"], errors='coerce')
         df["Price_MAD"] = pd.to_numeric(df["Price_MAD"], errors='coerce')
         return df
-    except:
-        return None
+    except: return None
 
 # ==========================================
 # 4. ROUTING & UI
@@ -99,7 +91,6 @@ if st.session_state.user is None:
         """)
         
     with col_auth:
-        # FIXED LOGIN BOX USING STREAMLIT NATIVE CONTAINER
         with st.container(border=True):
             st.markdown("<h3 style='text-align: center; color: white; margin-top: 5px; margin-bottom: 0;'>SYSTEM ACCESS</h3>", unsafe_allow_html=True)
             st.markdown("<hr style='border: 1px solid #c1272d; margin-top: 10px; margin-bottom: 20px; width: 50%; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
@@ -124,7 +115,7 @@ if st.session_state.user is None:
 
 else:
     # -----------------------------------------------------
-    # NEW HOME PAGE DASHBOARD (After Login)
+    # HOME PAGE DASHBOARD (After Login)
     # -----------------------------------------------------
     st.markdown("""
     <div class="full-width-banner">
@@ -137,34 +128,74 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### 🌐 Sector Overview")
-    df_dash = get_dashboard_data()
+    col_overview, col_pipeline = st.columns([2, 1], gap="large")
     
-    if df_dash is not None:
-        avg_pe = df_dash["PE_Ratio"].mean()
-        top_stock = df_dash.loc[df_dash["Price_MAD"].idxmax(), "Company"]
-        tracked_count = len(df_dash)
+    with col_overview:
+        st.markdown("### 🌐 Sector Overview (CSE)")
+        df_dash = get_dashboard_data()
         
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Tracked Companies", f"{tracked_count} Entities")
-        m2.metric("Sector Average P/E", f"{avg_pe:.1f}x")
-        m3.metric("Highest Priced Stock", top_stock)
+        if df_dash is not None:
+            avg_pe = df_dash["PE_Ratio"].mean()
+            top_stock = df_dash.loc[df_dash["Price_MAD"].idxmax(), "Company"]
+            tracked_count = len(df_dash)
+            
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Tracked Companies", f"{tracked_count} Entities")
+            m2.metric("Sector Average P/E", f"{avg_pe:.1f}x")
+            m3.metric("Highest Priced Stock", top_stock)
+            
+    with col_pipeline:
+        st.markdown("### 🔄 M&A Pipeline")
+        st.markdown("""
+        <div style="font-size: 0.9rem; color: #d0d3d4;">
+        <b>Step 1:</b> Upload Target Financials.<br>
+        <b>Step 2:</b> Generate Pitch Teaser.<br>
+        <b>Step 3:</b> Run DCF & Monte Carlo.<br>
+        <b>Step 4:</b> Save to History Database.
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
-    st.markdown("### 🚀 Quick Actions & Modules")
+    st.markdown("### 🚀 Quick Navigation Modules")
     
-    col_q1, col_q2, col_q3 = st.columns(3)
+    # ROW 1 OF BUTTONS
+    c1, c2, c3 = st.columns(3)
     
-    with col_q1:
-        st.info("📉 **Corporate Analysis**\n\nUpload financial models, generate variance reports, and create Investment Teasers.")
-    with col_q2:
-        st.warning("⚖️ **Sector Benchmark**\n\nCompare operational margins, liquidity, and ROE against market peers.")
-    with col_q3:
-        st.success("💼 **M&A Deal Room**\n\nExecute LBO Quick-Models, Advanced CAPM, and Monte Carlo DCF simulations.")
-        
+    with c1:
+        st.markdown("""<div class='card-blue'><p class='card-title' style='color:#1f77b4;'>📉 Corporate Analysis</p><p class='card-text'>Upload Excel models and generate investment teasers.</p></div>""", unsafe_allow_html=True)
+        if st.button("Access Module ➡️", key="btn_corp", use_container_width=True): st.switch_page("pages/1_Corporate_Analysis.py")
+            
+    with c2:
+        st.markdown("""<div class='card-green'><p class='card-title' style='color:#2ca02c;'>⚖️ Sector Benchmark</p><p class='card-text'>Compare target operational margins against Moroccan peers.</p></div>""", unsafe_allow_html=True)
+        if st.button("Access Module ➡️", key="btn_bench", use_container_width=True): st.switch_page("pages/2_BTP_Benchmark.py")
+            
+    with c3:
+        st.markdown("""<div class='card-purple'><p class='card-title' style='color:#9467bd;'>💼 M&A Deal Room</p><p class='card-text'>Execute LBO Quick-Models and Monte Carlo DCF simulations.</p></div>""", unsafe_allow_html=True)
+        if st.button("Access Module ➡️", key="btn_ma", use_container_width=True): st.switch_page("pages/3_MA_Valuation.py")
+
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("🚪 Terminate Session", type="secondary"):
-        supabase.auth.sign_out()
-        st.session_state.user = None
-        st.rerun()
+    # ROW 2 OF BUTTONS
+    c4, c5, c6 = st.columns(3)
+    
+    with c4:
+        st.markdown("""<div class='card-red'><p class='card-title' style='color:#d62728;'>💹 Live Charts</p><p class='card-text'>Track real-time market trends and historical pricing data.</p></div>""", unsafe_allow_html=True)
+        if st.button("Access Module ➡️", key="btn_charts", use_container_width=True): st.switch_page("pages/4_Live_Charts.py")
+            
+    with c5:
+        st.markdown("""<div class='card-orange'><p class='card-title' style='color:#ff7f0e;'>🗄️ My History</p><p class='card-text'>Access and manage your previously saved analysis sessions.</p></div>""", unsafe_allow_html=True)
+        if st.button("Access Module ➡️", key="btn_hist", use_container_width=True): st.switch_page("pages/6_My_History.py")
+            
+    with c6:
+        st.markdown("""<div class='card-teal'><p class='card-title' style='color:#17becf;'>👤 About Creator</p><p class='card-text'>Professional profile, background, and networking links.</p></div>""", unsafe_allow_html=True)
+        if st.button("Access Module ➡️", key="btn_about", use_container_width=True): st.switch_page("pages/5_About_Creator.py")
+
+    st.markdown("---")
+    
+    # LOGOUT BUTTON
+    col_empty, col_logout = st.columns([4, 1])
+    with col_logout:
+        if st.button("🚪 Terminate Session", type="secondary", use_container_width=True):
+            supabase.auth.sign_out()
+            st.session_state.user = None
+            st.rerun()
