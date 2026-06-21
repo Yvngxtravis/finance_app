@@ -1,10 +1,7 @@
 import streamlit as st
 
-st.set_page_config(
-    page_title="Z.ELAIDI - Financial Analytics",
-    layout="wide",
-    page_icon="📊"
-)
+# MUST BE THE FIRST LINE
+st.set_page_config(page_title="Z.ELAIDI - Financial Analytics", layout="wide", page_icon="📊")
 
 import pandas as pd
 import plotly.express as px
@@ -15,34 +12,31 @@ import io
 import json
 import base64
 from fpdf import FPDF
-
+from supabase import create_client, ClientOptions
 
 # ==========================================
-# SUPABASE CONFIGURATION
+# 1. SUPABASE CONFIGURATION (Clean & Secure)
 # ==========================================
-from supabase import create_client
-import streamlit as st
-
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
-st.write("URL:", SUPABASE_URL)
-
 try:
     supabase = create_client(
-        SUPABASE_URL,
-        SUPABASE_KEY
+        supabase_url=SUPABASE_URL,
+        supabase_key=SUPABASE_KEY,
+        options=ClientOptions(postgrest_client_timeout=10)
     )
-    st.success("Supabase client created")
 except Exception as e:
-    st.error(f"Client Error: {e}")
+    st.error(f"Database Connection Error: {e}")
     st.stop()
+
 ADMIN_EMAIL = "zakariaelaidi2006@gmail.com"
 
 if "user" not in st.session_state:
     st.session_state.user = None
+
 # ==========================================
-# 2. SAFE CSS
+# 2. PRO CSS STYLING
 # ==========================================
 st.markdown("""
 <style>
@@ -52,8 +46,9 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
 .ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
 .ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
-.btn-pdf { background-color: #c1272d; color: white; padding: 10px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+.btn-pdf { background-color: #c1272d; color: white; padding: 10px 15px; text-align: center; display: block; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; transition: 0.3s; }
 .btn-pdf:hover { background-color: #a02025; color: white; }
+.glossary-box { background-color: #0e1117; padding: 15px; border-left: 3px solid #f5b041; border-radius: 5px; font-size: 0.9rem; color: #d0d3d4; margin-bottom: 15px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -73,9 +68,14 @@ def get_history(user_id):
     except: return []
 
 def generate_template():
-    df_template = pd.DataFrame({"Line_Item": ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Total Equity", "Total Debt"], "2024": [0]*6, "2025": [0]*6})
+    df_template = pd.DataFrame({
+        "Line_Item": ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Total Equity", "Total Debt"], 
+        "2024": [0]*6, 
+        "2025": [0]*6
+    })
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer: df_template.to_excel(writer, index=False)
+    with pd.ExcelWriter(output, engine='openpyxl') as writer: 
+        df_template.to_excel(writer, index=False)
     return output.getvalue()
 
 @st.cache_data(ttl=60)
@@ -95,6 +95,7 @@ def get_live_market_data():
         return df
     except: return None
 
+# Fixed PDF Generator (fpdf2 compatibility)
 def create_pdf(metrics_dict):
     pdf = FPDF()
     pdf.add_page()
@@ -127,7 +128,9 @@ def create_pdf(metrics_dict):
     pdf.set_font("Arial", 'I', 9)
     pdf.set_text_color(150, 150, 150)
     pdf.cell(0, 10, "Generated via Z.ELAIDI Financial Hub", align='C')
-    return pdf.output(dest='S').encode('latin-1')
+    
+    # Returning raw bytes instead of encoding to fix the fpdf2 issue
+    return bytes(pdf.output())
 
 # ==========================================
 # 4. AUTHENTICATION MODULE
@@ -138,54 +141,22 @@ def auth_ui():
 
     with col2:
         st.markdown("<h2 style='text-align: left; color: white; border-top: 4px solid #c1272d; padding-top: 15px;'>SYSTEM ACCESS</h2>", unsafe_allow_html=True)
-
-        choice = st.radio(
-            "Action",
-            ["Login", "Sign Up"],
-            horizontal=True,
-            label_visibility="collapsed"
-        )
-
-        email = st.text_input(
-            "Corporate Email",
-            placeholder="email@domain.com"
-        )
-
-        password = st.text_input(
-            "Password",
-            type="password",
-            placeholder="••••••••"
-        )
+        choice = st.radio("Action", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
+        email = st.text_input("Corporate Email", placeholder="email@domain.com")
+        password = st.text_input("Password", type="password", placeholder="••••••••")
 
         if st.button("Authenticate", use_container_width=True):
             if choice == "Login":
                 try:
-                    res = supabase.auth.sign_in_with_password(
-                        {
-                            "email": email,
-                            "password": password
-                        }
-                    )
+                    res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                     st.session_state.user = res.user
                     st.rerun()
-
-                except Exception as e:
-                    st.error(f"Login Error: {str(e)}")
-
+                except Exception as e: st.error(f"Login Error: {str(e)}")
             else:
                 try:
-                    supabase.auth.sign_up(
-                        {
-                            "email": email,
-                            "password": password
-                        }
-                    )
-                    st.success(
-                        "Account created successfully. Switch to Login."
-                    )
-
-                except Exception as e:
-                    st.error(f"Sign Up Error: {str(e)}")
+                    supabase.auth.sign_up({"email": email, "password": password})
+                    st.success("Account created successfully. Switch to Login.")
+                except Exception as e: st.error(f"Sign Up Error: {str(e)}")
 
 # ==========================================
 # 5. MAIN APPLICATION
@@ -236,27 +207,46 @@ def main_app():
             has_data = True
             try:
                 df_finance = pd.read_excel(uploaded_file)
+                df_finance.columns = [str(c).strip() for c in df_finance.columns]
                 df_finance.set_index(df_finance.columns[0], inplace=True)
+                
+                col_24 = df_finance.columns[0]
                 col_25 = df_finance.columns[1]
                 
-                rev_25 = float(df_finance.loc["Revenue", col_25])
-                net_25 = float(df_finance.loc["Net Income", col_25])
-                ca_25 = float(df_finance.loc["Current Assets", col_25])
-                cl_25 = float(df_finance.loc["Current Liabilities", col_25])
-                eq_25 = float(df_finance.loc["Total Equity", col_25])
+                # Setup Variance Table Logic
+                df_display = df_finance.copy()
+                df_display[col_24] = pd.to_numeric(df_display[col_24], errors='coerce')
+                df_display[col_25] = pd.to_numeric(df_display[col_25], errors='coerce')
+                df_display['YoY Growth (%)'] = ((df_display[col_25] - df_display[col_24]) / df_display[col_24]) * 100
                 
-                user_net_margin = (net_25 / rev_25) * 100 if rev_25 > 0 else 0
-                user_roe = (net_25 / eq_25) * 100 if eq_25 > 0 else 0
-                current_ratio = ca_25 / cl_25 if cl_25 > 0 else 0
+                def color_variance(row):
+                    val = row['YoY Growth (%)']
+                    if pd.isna(val): return [''] * len(row)
+                    color = '#2ca02c' if val > 0 else '#d62728'
+                    return [f'color: {color}' if col == 'YoY Growth (%)' else '' for col in row.index]
 
                 left_col, right_col = st.columns([1.5, 1], gap="large")
                 
                 with left_col:
-                    st.subheader("📋 Key Performance Ratios")
+                    st.subheader("📋 Imported Variance Analysis")
+                    st.dataframe(df_display.style.apply(color_variance, axis=1).format({'YoY Growth (%)': "{:.2f}%"}), use_container_width=True)
+
+                    # Calculating Ratios
+                    rev_25 = float(df_finance.loc["Revenue", col_25])
+                    net_25 = float(df_finance.loc["Net Income", col_25])
+                    ca_25 = float(df_finance.loc["Current Assets", col_25])
+                    cl_25 = float(df_finance.loc["Current Liabilities", col_25])
+                    eq_25 = float(df_finance.loc["Total Equity", col_25])
+                    
+                    user_net_margin = (net_25 / rev_25) * 100 if rev_25 > 0 else 0
+                    user_roe = (net_25 / eq_25) * 100 if eq_25 > 0 else 0
+                    current_ratio = ca_25 / cl_25 if cl_25 > 0 else 0
+
+                    st.subheader("📊 Key Performance Ratios")
                     cr1, cr2, cr3 = st.columns(3)
-                    cr1.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=current_ratio, title={'text': "Current Ratio"}, gauge={'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}})).update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-                    cr2.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_net_margin, number={'suffix': "%"}, title={'text': "Net Margin"}, gauge={'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}})).update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-                    cr3.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_roe, number={'suffix': "%"}, title={'text': "ROE"}, gauge={'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}})).update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+                    cr1.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=current_ratio, title={'text': "Current Ratio"}, gauge={'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+                    cr2.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_net_margin, number={'suffix': "%"}, title={'text': "Net Margin"}, gauge={'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+                    cr3.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_roe, number={'suffix': "%"}, title={'text': "ROE"}, gauge={'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
 
                 with right_col:
                     st.subheader("💾 Database & Reports")
@@ -269,7 +259,7 @@ def main_app():
                             st.success("✅ Saved successfully!")
                         else: st.error("⚠️ Failed to save.")
                     
-                    # PDF Generation Button
+                    # Fixed PDF Generation
                     try:
                         metrics = {
                             "Revenue (MAD)": f"{rev_25:,.2f}",
@@ -282,7 +272,8 @@ def main_app():
                         href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="Financial_Report_Z_ELAIDI.pdf" class="btn-pdf">📄 Download PDF Report</a>'
                         st.markdown(href, unsafe_allow_html=True)
                     except Exception as e:
-                        st.error("Error generating PDF. Please check if fpdf is installed.")
+                        st.error(f"Error generating PDF: {str(e)}")
+
             except Exception as e:
                 st.error("⚠️ Error processing file. Ensure strict template format.")
 
@@ -301,6 +292,18 @@ def main_app():
     # --- TAB 3: M&A DEAL ROOM ---
     with tab3:
         st.header("💼 M&A & Private Equity Deal Room")
+        
+        with st.expander("ℹ️ Glossary & Definitions"):
+            st.markdown("""
+            <div class="glossary-box">
+                <b>WACC (Weighted Average Cost of Capital):</b> The minimum acceptable return a company must earn to satisfy its creditors and owners.<br>
+                <b>Terminal Growth %:</b> The constant rate at which a company is expected to grow forever beyond the initial projection period.<br>
+                <b>EV (Enterprise Value):</b> A measure of a company's total value, often used as a more comprehensive alternative to equity market capitalization.<br>
+                <b>Entry/Exit Multiples:</b> Financial metrics (like EV/EBITDA) used to determine the purchase and selling price of the business.<br>
+                <b>IRR (Internal Rate of Return):</b> The annualized expected profitability of the Private Equity investment.
+            </div>
+            """, unsafe_allow_html=True)
+
         if not has_data:
             st.info("💡 Upload your Financial Template in Tab 1 to populate data. Using proxy data for now.")
             
@@ -311,16 +314,14 @@ def main_app():
         
         with col_dcf:
             st.subheader("📊 DCF Valuation Engine")
-            # Added helpful tooltips (i) to all inputs
-            wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5, help="Weighted Average Cost of Capital: The minimum average return expected by investors.") / 100
-            tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1, help="The constant rate at which the company is expected to grow forever after the projection period.") / 100
-            proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0, help="Estimated annual growth rate for the 5-year projection period.") / 100
-            margin = st.slider("Cash Flow Margin %", 1.0, 30.0, 15.0, 1.0, help="The percentage of revenue converted into Free Cash Flow.") / 100
+            wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5, help="Weighted Average Cost of Capital") / 100
+            tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1, help="Expected constant growth rate forever") / 100
+            proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0, help="Estimated annual growth rate (5-Years)") / 100
+            margin = st.slider("Cash Flow Margin %", 1.0, 30.0, 15.0, 1.0, help="Percentage of revenue converted into FCF") / 100
 
             cfs = [base_rev * ((1 + proj_growth)**i) * margin for i in range(1, 6)]
             ev = sum([cf / ((1 + wacc)**(i+1)) for i, cf in enumerate(cfs)]) + (((cfs[-1] * (1 + tg)) / (wacc - tg)) / ((1 + wacc)**5) if wacc > tg else 0)
             
-            # Professional Card instead of st.success
             st.markdown(f"""
             <div class="ma-card" style="border-left: 4px solid #1f77b4;">
                 <div class="ma-card-title">Implied Enterprise Value (EV)</div>
@@ -331,9 +332,9 @@ def main_app():
         with col_lbo:
             st.subheader("💰 LBO Quick-Modeler")
             c_l1, c_l2 = st.columns(2)
-            with c_l1: entry_mult = st.number_input("Entry Multiple (x)", 3.0, 15.0, 6.0, 0.5, help="Purchase price expressed as a multiple of EBITDA.")
-            with c_l2: exit_mult = st.number_input("Exit Multiple (x)", 3.0, 15.0, 6.0, 0.5, help="Expected selling price expressed as a multiple of EBITDA at year 5.")
-            debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0, help="Percentage of the acquisition funded by debt.") / 100
+            with c_l1: entry_mult = st.number_input("Entry Multiple (x)", 3.0, 15.0, 6.0, 0.5, help="Purchase price expressed as an EBITDA multiple")
+            with c_l2: exit_mult = st.number_input("Exit Multiple (x)", 3.0, 15.0, 6.0, 0.5, help="Selling price expressed as an EBITDA multiple at Year 5")
+            debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0, help="Percentage of acquisition funded by debt") / 100
 
             entry_ev = base_ebitda * entry_mult
             debt = entry_ev * debt_pct
@@ -344,7 +345,6 @@ def main_app():
             moic = exit_equity / equity if equity > 0 else 0
             irr = ((moic**(1/5) - 1) * 100) if moic > 0 else 0
             
-            # Professional Card instead of st.info
             st.markdown(f"""
             <div class="ma-card" style="border-left: 4px solid #9467bd;">
                 <div class="ma-card-title">Private Equity Metrics (5-Year Horizon)</div>
@@ -355,12 +355,30 @@ def main_app():
     # --- TAB 4: CHARTS ---
     with tab4:
         if df_live is not None:
-            sel_co = st.selectbox("Select Company:", df_live["Company"].tolist())
-            base_price = df_live[df_live["Company"] == sel_co]["Live_Price_MAD"].values[0]
-            dates = pd.date_range(end=pd.Timestamp.today(), periods=90)
-            np.random.seed(42)
-            closes = base_price - np.cumsum(np.random.normal(0, base_price*0.05, size=90)[::-1])[::-1]
-            st.plotly_chart(go.Figure(data=[go.Scatter(x=dates, y=closes, mode='lines', line=dict(color='#1f77b4', width=2))]).update_layout(height=400, title=f"90-Day Trend - {sel_co}", template="plotly_dark"), use_container_width=True)
+            c_sel1, c_sel2, c_sel3 = st.columns(3)
+            with c_sel1: selected_company = st.selectbox("Company:", df_live["Company"].tolist())
+            with c_sel2: time_period = st.selectbox("Timeframe:", ["1 Month", "3 Months", "6 Months"])
+            with c_sel3: chart_type = st.radio("Style:", ["Candlesticks", "Line Chart"], horizontal=True)
+            
+            num_days = {"1 Month": 30, "3 Months": 90, "6 Months": 180}[time_period]
+            base_price = df_live[df_live["Company"] == selected_company]["Live_Price_MAD"].values[0]
+            dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=num_days)
+            
+            np.random.seed(42 + len(selected_company) + num_days)
+            vol = base_price * 0.05
+            changes = np.random.normal(0, vol, size=num_days)
+            closes = base_price - np.cumsum(changes[::-1])[::-1] 
+            opens = closes - np.random.normal(0, vol, size=num_days)
+            highs = np.maximum(opens, closes) + np.abs(np.random.normal(0, vol*1.2, size=num_days))
+            lows = np.minimum(opens, closes) - np.abs(np.random.normal(0, vol*1.2, size=num_days))
+            
+            if chart_type == "Candlesticks":
+                fig_m = go.Figure(data=[go.Candlestick(x=dates, open=opens, high=highs, low=lows, close=closes, increasing_line_color='#00ff00', decreasing_line_color='#ff0000')])
+            else:
+                fig_m = go.Figure(data=[go.Scatter(x=dates, y=closes, mode='lines+markers', line=dict(color='#1f77b4', width=2))])
+                
+            fig_m.update_layout(height=450, title=f"Price Trend - {selected_company} ({time_period})", template="plotly_dark", xaxis_rangeslider_visible=False)
+            st.plotly_chart(fig_m, use_container_width=True)
 
     # --- TAB 6: MY HISTORY ---
     with tab6:
@@ -379,15 +397,26 @@ def main_app():
 
     # --- TAB 5: ABOUT ---
     with tab5:
-        st.header("👤 Administrator Profile")
-        c_a1, c_a2 = st.columns([2, 1])
-        with c_a1:
-            st.markdown("### **Zakaria Elaidi** | *Lead Financial Analyst*")
-            st.markdown("Administrator of the BTP Financial Engine. ENCG El Jadida.")
-        with c_a2:
+        col_about1, col_about2 = st.columns([2, 1])
+        with col_about1:
             st.markdown("""
-            <div style="background-color: #161a22; padding: 20px; border: 1px solid #333; text-align: center; border-radius: 5px;">
-                <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">[ Connect on LinkedIn ]</a>
+            ### **Zakaria Elaidi** | *Financial Analyst & M&A Specialist*
+            
+            Currently pursuing a Master's degree in Finance (Programme Grande École) at **ENCG El Jadida**, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.
+            
+            With a strategic focus on targeting roles in **M&A, Investment Banking, and Private Equity**, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).
+            
+            **Professional Background:**
+            * **Consulting Experience:** Successfully delivered over 150 financial modeling and analysis projects globally as a freelance consultant.
+            * **Corporate Exposure:** Completed the rigorous KPMG UK Audit Job Simulation and is actively preparing for an upcoming professional placement at OCP Group.
+            * **Core Expertise:** DCF Valuation, LBO Modeling, Market Finance, Marché des Capitaux, and Financial Statement Analysis.
+            """)
+        with col_about2:
+            st.markdown("""
+            <div style="background-color: #161a22; padding: 25px; border: 1px solid #333; text-align: center; border-radius: 8px; border-top: 4px solid #c1272d;">
+                <h4 style="margin-top:0; color:#fff;">Professional Network</h4>
+                <p style="color:#b3b3b3; font-size: 0.9rem;">Open to networking, M&A discussions, and equity research collaborations.</p>
+                <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="background-color: #0077b5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 10px;">Connect on LinkedIn</a>
             </div>
             """, unsafe_allow_html=True)
 
