@@ -232,84 +232,97 @@ def main_app():
             except Exception as e:
                 st.error("⚠️ Error processing file. Ensure strict template format.")
 
-    # --- TAB 2: SECTOR BENCHMARK ---
-    with tab2:
-        if df_live is not None:
-            st.dataframe(df_live[["Company", "Live_Price_MAD", "Variation", "PE_Ratio", "Net_Margin_%", "ROE_%"]].style.highlight_max(axis=0, subset=["Net_Margin_%", "ROE_%"], color="#1f77b4"), use_container_width=True)
-            if has_data:
-                st.markdown("---")
-                peers = st.multiselect("Select Competitors:", df_live["Company"].tolist(), default=df_live["Company"].tolist()[:2])
-                if peers:
-                    peer_data = df_live[df_live["Company"].isin(peers)]
-                    comp_df = pd.DataFrame({"Entity": ["Your Company"] + peer_data["Company"].tolist(), "Net Margin (%)": [user_net_margin] + peer_data["Net_Margin_%"].tolist(), "ROE (%)": [user_roe] + peer_data["ROE_%"].tolist()})
-                    st.plotly_chart(px.bar(comp_df, x="Entity", y=["Net Margin (%)", "ROE (%)"], barmode="group", template="plotly_dark"), use_container_width=True)
+        # --- TAB 2: SECTOR BENCHMARK ---
+        with tab2:
+            if df_live is not None:
+                st.dataframe(df_live[["Company", "Live_Price_MAD", "Variation", "PE_Ratio", "Net_Margin_%", "ROE_%"]].style.highlight_max(axis=0, subset=["Net_Margin_%", "ROE_%"], color="#1f77b4"), use_container_width=True)
+                if has_data:
+                    st.markdown("---")
+                    peers = st.multiselect("Select Competitors:", df_live["Company"].tolist(), default=df_live["Company"].tolist()[:2])
+                    if peers:
+                        peer_data = df_live[df_live["Company"].isin(peers)]
+                        comp_df = pd.DataFrame({"Entity": ["Your Company"] + peer_data["Company"].tolist(), "Net Margin (%)": [user_net_margin] + peer_data["Net_Margin_%"].tolist(), "ROE (%)": [user_roe] + peer_data["ROE_%"].tolist()})
+                        st.plotly_chart(px.bar(comp_df, x="Entity", y=["Net Margin (%)", "ROE (%)"], barmode="group", template="plotly_dark"), use_container_width=True)
 
-    # --- TAB 3: M&A DEAL ROOM ---
-    with tab3:
-        st.header("💼 M&A & Private Equity Deal Room")
-        base_rev = rev_25 if has_data else 5000000.0
-        base_ebitda = net_25 * 1.3 if has_data else 1200000.0
+        # --- TAB 3: M&A DEAL ROOM ---
+        with tab3:
+            st.header("💼 M&A & Private Equity Deal Room")
+            base_rev = rev_25 if has_data else 5000000.0
+            base_ebitda = net_25 * 1.3 if has_data else 1200000.0
 
-        col_dcf, col_lbo = st.columns(2, gap="large")
-        with col_dcf:
-            st.subheader("📊 DCF Valuation Engine")
-            wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5) / 100
-            tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1) / 100
-            proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0) / 100
-            margin = st.slider("Cash Flow Margin %", 1.0, 30.0, 15.0, 1.0) / 100
+            col_dcf, col_lbo = st.columns(2, gap="large")
+            with col_dcf:
+                st.subheader("📊 DCF Valuation Engine")
+                wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5) / 100
+                tg = st.slider("Terminal Growth %", 0.0, 5.0, 2.0, 0.1) / 100
+                proj_growth = st.slider("Projected Growth %", -10.0, 30.0, 5.0, 1.0) / 100
+                margin = st.slider("Cash Flow Margin %", 1.0, 30.0, 15.0, 1.0) / 100
 
-            cfs = [base_rev * ((1 + proj_growth)**i) * margin for i in range(1, 6)]
-            ev = sum([cf / ((1 + wacc)**(i+1)) for i, cf in enumerate(cfs)]) + (((cfs[-1] * (1 + tg)) / (wacc - tg)) / ((1 + wacc)**5) if wacc > tg else 0)
-            st.markdown(f'<div class="metric-card"><p style="margin:0; color:#b3b3b3;">Implied Enterprise Value (EV)</p><h2 style="margin:0; color:#00ff00;">{ev:,.2f} MAD</h2></div>', unsafe_allow_html=True)
+                cfs = [base_rev * ((1 + proj_growth)**i) * margin for i in range(1, 6)]
+                ev = sum([cf / ((1 + wacc)**(i+1)) for i, cf in enumerate(cfs)]) + (((cfs[-1] * (1 + tg)) / (wacc - tg)) / ((1 + wacc)**5) if wacc > tg else 0)
+                st.markdown(f'<div class="metric-card"><p style="margin:0; color:#b3b3b3;">Implied Enterprise Value (EV)</p><h2 style="margin:0; color:#00ff00;">{ev:,.2f} MAD</h2></div>', unsafe_allow_html=True)
 
-        with col_lbo:
-            st.subheader("💰 LBO Quick-Modeler")
-            c_l1, c_l2 = st.columns(2)
-            with c_l1: entry_mult = st.number_input("Entry Multiple", 3.0, 15.0, 6.0, 0.5)
-            with c_l2: exit_mult = st.number_input("Exit Multiple", 3.0, 15.0, 6.0, 0.5)
-            debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0) / 100
+            with col_lbo:
+                st.subheader("💰 LBO Quick-Modeler")
+                c_l1, c_l2 = st.columns(2)
+                with c_l1: entry_mult = st.number_input("Entry Multiple", 3.0, 15.0, 6.0, 0.5)
+                with c_l2: exit_mult = st.number_input("Exit Multiple", 3.0, 15.0, 6.0, 0.5)
+                debt_pct = st.slider("Debt Funding %", 0.0, 90.0, 60.0, 5.0) / 100
 
-            entry_ev = base_ebitda * entry_mult
-            debt = entry_ev * debt_pct
-            equity = entry_ev - debt
-            exit_ev = (base_ebitda * ((1 + proj_growth)**5)) * exit_mult
-            exit_equity = exit_ev - max(0, debt - sum(cfs)*0.5)
+                entry_ev = base_ebitda * entry_mult
+                debt = entry_ev * debt_pct
+                equity = entry_ev - debt
+                exit_ev = (base_ebitda * ((1 + proj_growth)**5)) * exit_mult
+                exit_equity = exit_ev - max(0, debt - sum(cfs)*0.5)
 
-            moic = exit_equity / equity if equity > 0 else 0
-            irr = ((moic**(1/5) - 1) * 100) if moic > 0 else 0
-            st.markdown(f'<div class="metric-card" style="border-top-color:#9467bd;"><p style="margin:0; color:#b3b3b3;">Private Equity IRR (5-Year)</p><h2 style="margin:0; color:{"#00ff00" if irr>=20 else "#ff0000"};">{irr:.2f}%</h2><p style="margin:0; color:#b3b3b3;">MoIC: <b>{moic:.2f}x</b></p></div>', unsafe_allow_html=True)
+                moic = exit_equity / equity if equity > 0 else 0
+                irr = ((moic**(1/5) - 1) * 100) if moic > 0 else 0
+                st.markdown(f'<div class="metric-card" style="border-top-color:#9467bd;"><p style="margin:0; color:#b3b3b3;">Private Equity IRR (5-Year)</p><h2 style="margin:0; color:{"#00ff00" if irr>=20 else "#ff0000"};">{irr:.2f}%</h2><p style="margin:0; color:#b3b3b3;">MoIC: <b>{moic:.2f}x</b></p></div>', unsafe_allow_html=True)
 
-    # --- TAB 4: CHARTS ---
-    with tab4:
-        if df_live is not None:
-            sel_co = st.selectbox("Select Company:", df_live["Company"].tolist())
-            base_price = df_live[df_live["Company"] == sel_co]["Live_Price_MAD"].values[0]
-            dates = pd.date_range(end=pd.Timestamp.today(), periods=90)
-            np.random.seed(42)
-            closes = base_price - np.cumsum(np.random.normal(0, base_price*0.05, size=90)[::-1])[::-1]
-            st.plotly_chart(go.Figure(data=[go.Scatter(x=dates, y=closes, mode='lines', line=dict(color='#1f77b4', width=2))]).update_layout(height=400, title=f"90-Day Trend - {sel_co}", template="plotly_dark"), use_container_width=True)
+        # --- TAB 4: CHARTS ---
+        with tab4:
+            if df_live is not None:
+                sel_co = st.selectbox("Select Company:", df_live["Company"].tolist())
+                base_price = df_live[df_live["Company"] == sel_co]["Live_Price_MAD"].values[0]
+                dates = pd.date_range(end=pd.Timestamp.today(), periods=90)
+                np.random.seed(42)
+                closes = base_price - np.cumsum(np.random.normal(0, base_price*0.05, size=90)[::-1])[::-1]
+                st.plotly_chart(go.Figure(data=[go.Scatter(x=dates, y=closes, mode='lines', line=dict(color='#1f77b4', width=2))]).update_layout(height=400, title=f"90-Day Trend - {sel_co}", template="plotly_dark"), use_container_width=True)
 
-    # --- TAB 6: MY HISTORY ---
-    with tab6:
-        st.header("🗄️ Database Records")
-        hist = get_history(st.session_state.user.id)
-        if len(hist) == 0:
-            st.info("No records found in database.")
-        else:
-            for item in hist:
-                date_str = item['created_at'][:10]
-                data = json.loads(item['work_data'])
-                with st.expander(f"📊 Session: {date_str} - {data.get('Date', 'N/A')}"):
-                    st.write(f"**Revenue:** {data.get('Revenue', 0):,.2f} MAD")
-                    st.write(f"**Net Margin:** {data.get('Net Margin', 0)}%")
-                    st.write(f"**ROE:** {data.get('ROE', 0)}%")
+        # --- TAB 6: MY HISTORY ---
+        with tab6:
+            st.header("🗄️ Database Records")
+            hist = get_history(st.session_state.user.id)
+            if len(hist) == 0:
+                st.info("No records found in database.")
+            else:
+                for item in hist:
+                    date_str = item['created_at'][:10]
+                    data = json.loads(item['work_data'])
+                    with st.expander(f"📊 Session: {date_str} - {data.get('Date', 'N/A')}"):
+                        st.write(f"**Revenue:** {data.get('Revenue', 0):,.2f} MAD")
+                        st.write(f"**Net Margin:** {data.get('Net Margin', 0)}%")
+                        st.write(f"**ROE:** {data.get('ROE', 0)}%")
 
-    # --- TAB 5: ABOUT ---
-    with tab5:
-        st.header("👤 Administrator Profile")
-        c_a1, c_a2 = st.columns([2, 1])
-        with c_a1:
-            st.markdown("### **Zakaria Elaidi** | *Lead Financial Analyst*")
-            st.markdown("Administrator of the BTP Financial Engine. ENCG El Jadida.")
-        with c_a2:
-            st.markdown('<div style="background-color: #161a22; padding
+        # --- TAB 5: ABOUT ---
+        with tab5:
+            st.header("👤 Administrator Profile")
+            c_a1, c_a2 = st.columns([2, 1])
+            with c_a1:
+                st.markdown("### **Zakaria Elaidi** | *Lead Financial Analyst*")
+                st.markdown("Administrator of the BTP Financial Engine. ENCG El Jadida.")
+            with c_a2:
+                # Syntax error fixed here utilizing block string for HTML components
+                st.markdown("""
+                <div style="background-color: #161a22; padding: 20px; border: 1px solid #333; text-align: center;">
+                    <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">[ LinkedIn Portal ]</a>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # ==========================================
+    # 7. ROUTER
+    # ==========================================
+    if st.session_state.user is None:
+        auth_ui()
+    else:
+        main_app()
