@@ -6,54 +6,70 @@ import plotly.graph_objects as go
 if "user" not in st.session_state or st.session_state.user is None:
     st.switch_page("app.py")
 
-st.title("💼 M&A & Private Equity Deal Room")
-
+# --- UI STYLING & CSS HACKS ---
 st.markdown("""
 <style>
-.ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;}
-.ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
-.ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
+    /* Rename Sidebar 'app' to 'Home' */
+    [data-testid="stSidebarNav"] li:first-child a span { display: none !important; }
+    [data-testid="stSidebarNav"] li:first-child a::after { content: "🏠 Home"; font-size: 15px; margin-left: 0px; }
+    
+    .ma-card { background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;}
+    .ma-card-title { color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }
+    .ma-card-value { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
 </style>
 """, unsafe_allow_html=True)
 
+st.title("💼 M&A & Private Equity Deal Room")
+
 with st.expander("ℹ️ Glossary & Advanced Definitions"):
     st.markdown("""
-    * **CAPM (Capital Asset Pricing Model):** Formula used to calculate the Expected Return on Equity ($K_e$).
     * **Monte Carlo Simulation:** A computational algorithm that relies on repeated random sampling to understand the impact of risk and uncertainty in the valuation.
     * **MoIC (Multiple on Invested Capital):** Shows how much value an investment has generated (Exit Equity / Entry Equity).
     """)
 
 # --- SIDEBAR INPUTS (PROXY DATA) ---
-st.sidebar.header("🏢 Target Base Financials")
+st.sidebar.markdown("### 🏢 Target Base Financials")
 st.sidebar.info("Input the target company's base financials here to feed the models.")
 base_rev = st.sidebar.number_input("Base Revenue (MAD)", value=5000000.0, step=100000.0)
 base_ebitda = st.sidebar.number_input("Base EBITDA (MAD)", value=1200000.0, step=50000.0)
 
 # --- ADVANCED WACC CALCULATOR (CAPM) ---
-st.subheader("⚙️ Advanced WACC Calculator (CAPM)")
+st.subheader("⚙️ Advanced WACC Calculator")
+
+# NEW: CAPM DEFINITION BOX
+st.info("""
+**Capital Asset Pricing Model (CAPM)** The CAPM is a financial model used to calculate the expected Return on Equity ($K_e$). It establishes a linear relationship between the required return of an investment and its systematic risk ($\\beta$).
+
+**Formula:** $K_e = R_f + \\beta \\times (R_m - R_f)$
+* **$R_f$:** Risk-Free Rate (e.g., Moroccan 10-Year Treasury Bond)
+* **$\\beta$:** Beta (Volatility of the asset relative to the market)
+* **$R_m$:** Expected Market Return
+""")
+
 use_capm = st.toggle("Enable CAPM Calculation Mode")
 
 if use_capm:
-    st.markdown("<div style='padding: 15px; border: 1px solid #333; border-radius: 8px;'>", unsafe_allow_html=True)
-    c1, c2, c3, c4 = st.columns(4)
-    rf = c1.number_input("Risk-Free Rate (%)", value=4.0, help="E.g., Moroccan 10Y Treasury Bond") / 100
-    rm = c2.number_input("Market Return (%)", value=10.0, help="Expected return of the CSE") / 100
-    beta = c3.number_input("Beta (β)", value=1.2, help="Volatility relative to the market")
-    tax = c4.number_input("Tax Rate (%)", value=30.0) / 100
-    
-    c5, c6 = st.columns(2)
-    kd_raw = c5.number_input("Cost of Debt (%)", value=6.0) / 100
-    debt_weight = c6.slider("Debt Weighting (%)", 0.0, 100.0, 40.0) / 100
-    equity_weight = 1 - debt_weight
-    
-    # Math Engine
-    ke = rf + beta * (rm - rf)
-    kd = kd_raw * (1 - tax)
-    wacc = (ke * equity_weight) + (kd * debt_weight)
-    
-    st.info(f"**Cost of Equity (Ke):** {ke*100:.2f}% &nbsp; | &nbsp; **Cost of Debt post-tax (Kd):** {kd*100:.2f}%")
-    st.success(f"🎯 **Implied WACC:** {wacc*100:.2f}%")
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        c1, c2, c3, c4 = st.columns(4)
+        rf = c1.number_input("Risk-Free Rate (%)", value=4.0, help="E.g., Moroccan 10Y Treasury Bond") / 100
+        rm = c2.number_input("Market Return (%)", value=10.0, help="Expected return of the CSE") / 100
+        beta = c3.number_input("Beta (β)", value=1.2, help="Volatility relative to the market")
+        tax = c4.number_input("Tax Rate (%)", value=30.0) / 100
+        
+        st.markdown("---")
+        
+        c5, c6 = st.columns(2)
+        kd_raw = c5.number_input("Cost of Debt (%)", value=6.0) / 100
+        debt_weight = c6.slider("Debt Weighting (%)", 0.0, 100.0, 40.0) / 100
+        equity_weight = 1 - debt_weight
+        
+        # Math Engine
+        ke = rf + beta * (rm - rf)
+        kd = kd_raw * (1 - tax)
+        wacc = (ke * equity_weight) + (kd * debt_weight)
+        
+        st.success(f"**Cost of Equity (Ke):** {ke*100:.2f}% &nbsp; | &nbsp; **Cost of Debt post-tax (Kd):** {kd*100:.2f}%")
+        st.markdown(f"<h3 style='text-align:center; color:#2ca02c;'>🎯 Implied WACC: {wacc*100:.2f}%</h3>", unsafe_allow_html=True)
 else:
     wacc = st.slider("WACC %", 5.0, 20.0, 10.0, 0.5) / 100
 
@@ -83,7 +99,6 @@ with col_dcf:
     if st.button("🎲 Run Monte Carlo Simulation (10k Iterations)", use_container_width=True, type="primary"):
         with st.spinner("Running 10,000 simulations..."):
             np.random.seed(42)
-            # Create normal distributions for risk modeling (2% standard deviation)
             sim_growths = np.random.normal(proj_growth, 0.02, 10000) 
             sim_margins = np.random.normal(margin, 0.02, 10000) 
             
@@ -112,7 +127,6 @@ with col_lbo:
     debt = entry_ev * debt_pct
     equity = entry_ev - debt
     exit_ev = (base_ebitda * ((1 + proj_growth)**5)) * exit_mult
-    # Assuming half of FCF pays down debt
     exit_equity = exit_ev - max(0, debt - sum(cfs)*0.5)
 
     moic = exit_equity / equity if equity > 0 else 0
