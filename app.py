@@ -100,10 +100,16 @@ except Exception as e:
 if "user" not in st.session_state: st.session_state.user = None
 
 # ==========================================
-# 3. DYNAMIC CSS & UI HACKS
+# 3. DYNAMIC CSS & UI HACKS (FIXED FOR ARABIC)
 # ==========================================
-# RTL adjustment for Arabic
-rtl_css = "* { direction: rtl; text-align: right; }" if lang == "العربية" else ""
+# Explicitly protect the sidebar and header from RTL flipping
+if lang == "العربية":
+    rtl_css = """
+    .block-container { direction: rtl; text-align: right; }
+    [data-testid="stSidebar"], [data-testid="stSidebarNav"], [data-testid="collapsedControl"], [data-testid="stHeader"] { direction: ltr !important; text-align: left !important; }
+    """
+else:
+    rtl_css = ""
 
 st.markdown(f"""
 <style>
@@ -185,7 +191,6 @@ else:
             st.divider()
             
             st.markdown(txt['pref'])
-            # Handling selection state
             langs = ["English", "Français", "Español", "العربية"]
             currs = ["MAD", "USD", "EUR"]
             
