@@ -3,7 +3,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-import yfinance as yf
+import requests
+from bs4 import BeautifulSoup
 
 # --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
@@ -96,44 +97,53 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- FETCH LIVE MARKET DATA (YFINANCE + FALLBACK) ---
-@st.cache_data(ttl=3600) # Cache for 1 hour to prevent API limits
+# --- SCRAPER & DATA ENGINE ---
+@st.cache_data(ttl=3600)
 def get_live_market_data():
-    # TGCC has been added here to be fully live.
-    tickers = {
-        "LafargeHolcim": "LHM.CM", 
-        "Addoha": "ADH.CM", 
-        "Alliances": "ADI.CM", 
-        "Ciments du Maroc": "CMA.CM",
-        "TGCC": "TGC.CM",
-        "Sonasid": "SND.CM",
-        "Jet Contractors": "JET.CM",
-        "Colorado": "COL.CM"
+    # Web Scraping configuration for Casablanca Stock Exchange targets
+    # We use Google Finance or similar robust public pages as proxies since local APIs often block bots
+    scrape_targets = {
+        "LafargeHolcim": "LHM:CMA",
+        "Addoha": "ADH:CMA",
+        "Alliances": "ADI:CMA",
+        "Ciments du Maroc": "CMA:CMA",
+        "TGCC": "TGC:CMA",
+        "Sonasid": "SND:CMA",
+        "Jet Contractors": "JET:CMA",
+        "Colorado": "COL:CMA"
+    }
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
     
     data_list = []
     
-    # 1. Try fetching LIVE prices
-    try:
-        for name, ticker in tickers.items():
-            stock = yf.Ticker(ticker)
-            hist = stock.history(period="1d")
-            if not hist.empty:
-                live_price = hist['Close'].iloc[-1]
-            else:
-                live_price = None # Will be handled by fallback
-                
-            data_list.append({
-                "Company": name,
-                "Price_MAD": live_price
-            })
+    # 1. Scraping Engine
+    for name, ticker in scrape_targets.items():
+        live_price = None
+        try:
+            # We scrape Google Finance as it has reliable CSE data (CMA exchange)
+            url = f"https://www.google.com/finance/quote/{ticker}"
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_size == 200 or response.ok:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                # Google Finance price class
+                price_div = soup.find("div", class_="YMlKec fxKbKc")
+                if price_div:
+                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
+                    live_price = float(clean_price)
+        except Exception as e:
+            pass # Silently fallback if connection fails
             
-    except Exception as e:
-        pass
+        data_list.append({
+            "Company": name,
+            "Price_MAD": live_price
+        })
         
     df_live = pd.DataFrame(data_list)
     
-    # 2. Fundamental Constants & Fallbacks
+    # 2. Fundamental Constants & Fallbacks Matrix
     fallbacks = {
         "LafargeHolcim": {"Price_MAD": 1800, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0},
         "Addoha": {"Price_MAD": 25, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0},
@@ -145,10 +155,9 @@ def get_live_market_data():
         "Colorado": {"Price_MAD": 55, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0}
     }
     
-    # Merge live prices with fundamental data
+    # Merge Scraped Live Prices with Fundamental Matrix
     final_data = []
     for name, metrics in fallbacks.items():
-        # Check if we got a live price for this company
         live_val = df_live.loc[df_live["Company"] == name, "Price_MAD"].values if not df_live.empty and name in df_live["Company"].values else [None]
         
         actual_price = live_val[0] if len(live_val) > 0 and pd.notnull(live_val[0]) else metrics["Price_MAD"]
@@ -164,7 +173,7 @@ def get_live_market_data():
         
     return pd.DataFrame(final_data)
 
-with st.spinner("🔄 Fetching Live Market Data from Casablanca Stock Exchange..."):
+with st.spinner("🔄 Scraping Live Market Data from Casablanca Stock Exchange..."):
     df_live = get_live_market_data().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
@@ -233,7 +242,7 @@ peers = st.multiselect(txt["select_peers"], df_live["Company"].tolist(), default
 if peers:
     display_df = df_combined[(df_combined["Company"].isin(peers)) | (df_combined["Company"] == target_name)].copy()
     color_map = {target_name: "#f5b041"}
-    for peer in peers: color_map[peer] = "#2ca02c" # Changed peer color to green to match BTP theme
+    for peer in peers: color_map[peer] = "#2ca02c"
 
     col_bar1, col_bar2 = st.columns(2)
     with col_bar1:
