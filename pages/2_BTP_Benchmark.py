@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
+import yfinance as yf
 
 # --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
@@ -29,7 +30,7 @@ t = {
         "p1_title": "⚖️ 1. Peer Comparison: Profitability & Returns", "select_peers": "Select Competitors to Compare:",
         "p2_title": "⚠️ 2. BTP Risk/Reward Matrix", "p2_desc": "Compares Profitability (ROE) vs Financial Risk (Gearing).",
         "p3_title": "🕸️ 3. 360° Sector Profile", "p3_desc": "Radar chart comparing your target against the market average.",
-        "col_price": f"Price ({sym})", "your_target": "Your Target", "market_peer": "Market Peer (Live)"
+        "col_price": f"Price ({sym})", "your_target": "Your Target", "market_peer": "Market Peer"
     },
     "Français": {
         "banner_h": "🏗️ Benchmark du Secteur BTP", "banner_desc": "Comparez votre entreprise cible avec ses pairs de la Bourse de Casablanca.",
@@ -39,7 +40,7 @@ t = {
         "p1_title": "⚖️ 1. Comparaison: Rentabilité & Rendements", "select_peers": "Sélectionnez les concurrents à comparer :",
         "p2_title": "⚠️ 2. Matrice Risque/Rendement BTP", "p2_desc": "Compare la Rentabilité (ROE) au Risque Financier (Gearing).",
         "p3_title": "🕸️ 3. Profil Sectoriel à 360°", "p3_desc": "Graphique radar comparant votre cible à la moyenne du marché.",
-        "col_price": f"Prix ({sym})", "your_target": "Votre Cible", "market_peer": "Pair du Marché (Direct)"
+        "col_price": f"Prix ({sym})", "your_target": "Votre Cible", "market_peer": "Pair du Marché"
     },
     "Español": {
         "banner_h": "🏗️ Benchmark del Sector BTP", "banner_desc": "Compara tu empresa objetivo con sus pares de la Bolsa de Casablanca.",
@@ -49,7 +50,7 @@ t = {
         "p1_title": "⚖️ 1. Comparación: Rentabilidad y Retornos", "select_peers": "Selecciona competidores para comparar:",
         "p2_title": "⚠️ 2. Matriz de Riesgo/Recompensa BTP", "p2_desc": "Compara Rentabilidad (ROE) vs Riesgo Financiero (Gearing).",
         "p3_title": "🕸️ 3. Perfil Sectorial 360°", "p3_desc": "Gráfico de radar que compara tu objetivo con el promedio del mercado.",
-        "col_price": f"Precio ({sym})", "your_target": "Tu Objetivo", "market_peer": "Par del Mercado (Vivo)"
+        "col_price": f"Precio ({sym})", "your_target": "Tu Objetivo", "market_peer": "Par del Mercado"
     },
     "العربية": {
         "banner_h": "🏗️ مقارنة أداء قطاع البناء", "banner_desc": "قارن شركتك المستهدفة مع نظيراتها في بورصة الدار البيضاء.",
@@ -59,7 +60,7 @@ t = {
         "p1_title": "⚖️ 1. مقارنة الأقران: الربحية والعوائد", "select_peers": "اختر المنافسين للمقارنة:",
         "p2_title": "⚠️ 2. مصفوفة المخاطر والمكافآت", "p2_desc": "يقارن الربحية مقابل المخاطر المالية (الرافعة المالية).",
         "p3_title": "🕸️ 3. ملف تعريف القطاع 360 درجة", "p3_desc": "رسم بياني راداري يقارن شركتك مع متوسط السوق.",
-        "col_price": f"السعر ({sym})", "your_target": "شركتك المستهدفة", "market_peer": "منافس في السوق (مباشر)"
+        "col_price": f"السعر ({sym})", "your_target": "شركتك المستهدفة", "market_peer": "منافس في السوق"
     }
 }
 txt = t[lang]
@@ -77,11 +78,9 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
-    /* BTP Banner Styling (Green Theme) */
     .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1541888086425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #2ca02c; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
     .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(44,160,44,0.2) 100%); }}
     .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
-    
     {rtl_css}
 </style>
 """, unsafe_allow_html=True)
@@ -97,53 +96,62 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- SCRAPER & DATA ENGINE ---
-@st.cache_data(ttl=3600)
+# --- HYBRID LIVE MARKET DATA ENGINE ---
+@st.cache_data(ttl=900) # Cache for 15 mins
 def get_live_market_data():
-    # Web Scraping configuration for Casablanca Stock Exchange targets
-    # We use Google Finance or similar robust public pages as proxies since local APIs often block bots
-    scrape_targets = {
-        "LafargeHolcim": "LHM:CMA",
-        "Addoha": "ADH:CMA",
-        "Alliances": "ADI:CMA",
-        "Ciments du Maroc": "CMA:CMA",
-        "TGCC": "TGC:CMA",
-        "Sonasid": "SND:CMA",
-        "Jet Contractors": "JET:CMA",
-        "Colorado": "COL:CMA"
+    targets = {
+        "LafargeHolcim": {"yf": "LHM.CM", "gf": "LHM:CMA"},
+        "Addoha": {"yf": "ADH.CM", "gf": "ADH:CMA"},
+        "Alliances": {"yf": "ADI.CM", "gf": "ADI:CMA"},
+        "Ciments du Maroc": {"yf": "CMA.CM", "gf": "CMA:CMA"},
+        "TGCC": {"yf": "TGC.CM", "gf": "TGC:CMA"},
+        "Sonasid": {"yf": "SND.CM", "gf": "SND:CMA"},
+        "Jet Contractors": {"yf": "JET.CM", "gf": "JET:CMA"},
+        "Colorado": {"yf": "COL.CM", "gf": "COL:CMA"}
     }
     
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-    
+    # Modern User-Agent to prevent bot blocking
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'}
     data_list = []
     
-    # 1. Scraping Engine
-    for name, ticker in scrape_targets.items():
+    for name, tkrs in targets.items():
         live_price = None
+        source = "🔴 Fallback"
+        
+        # 1. Try Yahoo Finance First
         try:
-            # We scrape Google Finance as it has reliable CSE data (CMA exchange)
-            url = f"https://www.google.com/finance/quote/{ticker}"
-            response = requests.get(url, headers=headers, timeout=5)
-            if response.status_size == 200 or response.ok:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                # Google Finance price class
-                price_div = soup.find("div", class_="YMlKec fxKbKc")
-                if price_div:
-                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
-                    live_price = float(clean_price)
-        except Exception as e:
-            pass # Silently fallback if connection fails
+            stock = yf.Ticker(tkrs["yf"])
+            hist = stock.history(period="1d")
+            if not hist.empty:
+                live_price = float(hist['Close'].iloc[-1])
+                source = "🟢 LIVE (YF)"
+        except:
+            pass
             
+        # 2. Try Google Finance Web Scraper if YF fails
+        if live_price is None:
+            try:
+                url = f"https://www.google.com/finance/quote/{tkrs['gf']}"
+                res = requests.get(url, headers=headers, timeout=5)
+                if res.status_code == 200:
+                    soup = BeautifulSoup(res.text, 'html.parser')
+                    price_div = soup.find("div", class_="YMlKec fxKbKc")
+                    if price_div:
+                        clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
+                        live_price = float(clean_price)
+                        source = "🟢 LIVE (GF)"
+            except:
+                pass
+                
         data_list.append({
             "Company": name,
-            "Price_MAD": live_price
+            "Price_MAD": live_price,
+            "Data_Status": source
         })
         
     df_live = pd.DataFrame(data_list)
     
-    # 2. Fundamental Constants & Fallbacks Matrix
+    # Fundamental Constants (Fallbacks & Ratios)
     fallbacks = {
         "LafargeHolcim": {"Price_MAD": 1800, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0},
         "Addoha": {"Price_MAD": 25, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0},
@@ -155,16 +163,22 @@ def get_live_market_data():
         "Colorado": {"Price_MAD": 55, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0}
     }
     
-    # Merge Scraped Live Prices with Fundamental Matrix
     final_data = []
     for name, metrics in fallbacks.items():
-        live_val = df_live.loc[df_live["Company"] == name, "Price_MAD"].values if not df_live.empty and name in df_live["Company"].values else [None]
+        row = df_live[df_live["Company"] == name]
+        actual_price = metrics["Price_MAD"]
+        status = "🔴 Fallback"
         
-        actual_price = live_val[0] if len(live_val) > 0 and pd.notnull(live_val[0]) else metrics["Price_MAD"]
+        if not row.empty:
+            val = row["Price_MAD"].values[0]
+            if pd.notnull(val):
+                actual_price = val
+                status = row["Data_Status"].values[0]
         
         final_data.append({
             "Company": name,
             "Price_MAD": actual_price,
+            "Data_Status": status,
             "PE_Ratio": metrics["PE_Ratio"],
             "Net_Margin_%": metrics["Net_Margin_%"],
             "ROE_%": metrics["ROE_%"],
@@ -173,7 +187,7 @@ def get_live_market_data():
         
     return pd.DataFrame(final_data)
 
-with st.spinner("🔄 Scraping Live Market Data from Casablanca Stock Exchange..."):
+with st.spinner("🔄 Booting Hybrid Live Engine (Connecting to Markets)..."):
     df_live = get_live_market_data().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
@@ -201,24 +215,24 @@ with st.container(border=True):
 
 # Append Target to Dataframe
 target_row = pd.DataFrame([{
-    "Company": target_name, "Price_Converted": 0, "PE_Ratio": target_pe, 
-    "Net_Margin_%": target_margin, "ROE_%": target_roe, 
+    "Company": target_name, "Price_Converted": 0, "Data_Status": "🎯 Input",
+    "PE_Ratio": target_pe, "Net_Margin_%": target_margin, "ROE_%": target_roe, 
     "Gearing_%": target_gearing, "Type": txt["your_target"]
 }])
 df_combined = pd.concat([target_row, df_live], ignore_index=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- RAW DATA TABLE ---
+# --- RAW DATA TABLE (WITH TRANSPARENCY COLUMN) ---
 st.subheader(txt["data_title"])
 
 def highlight_target(row):
     if row['Type'] == txt["your_target"]: return ['background-color: rgba(245, 176, 65, 0.15)'] * len(row)
     return [''] * len(row)
 
-# Format the dataframe columns for display
-display_table = df_combined[["Company", "Type", "Price_Converted", "PE_Ratio", "Net_Margin_%", "ROE_%", "Gearing_%"]].rename(
-    columns={"Price_Converted": txt["col_price"]}
+# Show Data_Status so the user can verify if data is Live or Cached
+display_table = df_combined[["Company", "Type", "Data_Status", "Price_Converted", "PE_Ratio", "Net_Margin_%", "ROE_%", "Gearing_%"]].rename(
+    columns={"Price_Converted": txt["col_price"], "Data_Status": "Feed Status"}
 )
 
 st.dataframe(
@@ -242,7 +256,7 @@ peers = st.multiselect(txt["select_peers"], df_live["Company"].tolist(), default
 if peers:
     display_df = df_combined[(df_combined["Company"].isin(peers)) | (df_combined["Company"] == target_name)].copy()
     color_map = {target_name: "#f5b041"}
-    for peer in peers: color_map[peer] = "#2ca02c"
+    for peer in peers: color_map[peer] = "#2ca02c" 
 
     col_bar1, col_bar2 = st.columns(2)
     with col_bar1:
