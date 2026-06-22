@@ -297,13 +297,14 @@ if uploaded_file:
 
         st.markdown("---")
         
-        # 1. SENSITIVITY HEATMAP (CUSTOM GRADIENT: RED -> ORANGE -> GREEN)
+        # 1. SENSITIVITY HEATMAP (RED -> ORANGE -> GREEN)
         st.subheader("📊 Sensitivity Heatmap (WACC vs Growth)")
         import numpy as np
         wacc_range = np.linspace(0.05, 0.15, 10)
         growth_range = np.linspace(0.01, 0.05, 10)
         z_data = [[(rev_25 * 0.15) / (w - g) for g in growth_range] for w in wacc_range]
         
+        # Explicit gradient: 0.0 (lowest value) is Red, 0.5 is Orange, 1.0 (highest value) is Green
         custom_colors = [[0.0, 'red'], [0.5, 'orange'], [1.0, 'green']]
         
         fig_heat = go.Figure(data=go.Heatmap(z=z_data, x=growth_range*100, y=wacc_range*100, colorscale=custom_colors, colorbar=dict(title=sym)))
@@ -381,36 +382,50 @@ if uploaded_file:
                 type="primary"
             )
             
-            # --- PROFESSIONAL EXCEL EXPORT (DASHBOARD) ---
+            # --- PROFESSIONAL EXCEL EXPORT (ENCADRE) ---
             output_excel = io.BytesIO()
             with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
                 df_display.to_excel(writer, sheet_name="Financial_Dashboard")
                 workbook = writer.book
                 worksheet = writer.sheets["Financial_Dashboard"]
                 
-                # Format headers
+                # Formats
                 header_format = workbook.add_format({'bold': True, 'bg_color': '#c1272d', 'font_color': 'white', 'border': 1})
+                cell_format = workbook.add_format({'border': 1})
+                
+                # Apply Header Format to Table 1
                 for col_num, value in enumerate(["Line Item"] + list(df_display.columns)):
                     worksheet.write(0, col_num, value, header_format)
                     worksheet.set_column(col_num, col_num, 20)
                 
-                # Add spacing before KPIs (kpi_start_row pushed down)
+                # Apply Borders to Table 1 Data Cells
+                for row_num, (index_val, row_data) in enumerate(df_display.iterrows(), start=1):
+                    worksheet.write(row_num, 0, str(index_val), cell_format)
+                    for col_num, val in enumerate(row_data, start=1):
+                        if pd.isna(val):
+                            worksheet.write_blank(row_num, col_num, "", cell_format)
+                        else:
+                            worksheet.write(row_num, col_num, val, cell_format)
+                
+                # Table 2: KPIs (Encadre)
                 kpi_start_row = len(df_display) + 4
                 worksheet.write(kpi_start_row, 0, "Key Performance Indicators", header_format)
-                worksheet.write(kpi_start_row + 1, 0, txt["nm"])
-                worksheet.write(kpi_start_row + 1, 1, f"{user_net_margin:.2f}%")
-                worksheet.write(kpi_start_row + 2, 0, txt["roe"])
-                worksheet.write(kpi_start_row + 2, 1, f"{user_roe:.2f}%")
-                worksheet.write(kpi_start_row + 3, 0, txt["cr"])
-                worksheet.write(kpi_start_row + 3, 1, f"{current_ratio:.2f}x")
+                worksheet.write(kpi_start_row, 1, "", header_format) # Fill header border
                 
-                # Add spacing before Diagnosis
+                worksheet.write(kpi_start_row + 1, 0, txt["nm"], cell_format)
+                worksheet.write(kpi_start_row + 1, 1, f"{user_net_margin:.2f}%", cell_format)
+                worksheet.write(kpi_start_row + 2, 0, txt["roe"], cell_format)
+                worksheet.write(kpi_start_row + 2, 1, f"{user_roe:.2f}%", cell_format)
+                worksheet.write(kpi_start_row + 3, 0, txt["cr"], cell_format)
+                worksheet.write(kpi_start_row + 3, 1, f"{current_ratio:.2f}x", cell_format)
+                
+                # Diagnosis Notes
                 diag_start_row = kpi_start_row + 6
                 worksheet.write(diag_start_row, 0, "Expert Diagnosis", header_format)
                 for i, note in enumerate(selected_nbs):
                     worksheet.write(diag_start_row + 1 + i, 0, note)
                 
-                # --- CREATE NATIVE EXCEL CHART ---
+                # --- NATIVE EXCEL CHART ---
                 chart = workbook.add_chart({'type': 'column'})
                 chart.add_series({
                     'name': str(col_24),
@@ -427,8 +442,8 @@ if uploaded_file:
                 chart.set_title({'name': 'Revenue vs Net Income (YoY)'})
                 chart.set_y_axis({'name': f'Value ({sym})'})
                 
-                # Insert chart with spacing (Moved from E2 to H2)
-                worksheet.insert_chart('H2', chart)
+                # Insert chart far away from the tables to keep it clean
+                worksheet.insert_chart('E2', chart)
                 
             st.download_button(
                 label=txt["dl_xlsx"],
