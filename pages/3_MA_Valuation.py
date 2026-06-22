@@ -27,7 +27,7 @@ t = {
         "sb_title": "🏢 Target Base Financials", "sb_info": "Input the target company's base financials here (in MAD).",
         "b_rev": "Base Revenue (MAD)", "b_ebitda": "Base EBITDA (MAD)",
         "capm_title": "⚙️ Advanced WACC Calculator",
-        "capm_def": "**Capital Asset Pricing Model (CAPM):** The CAPM is a financial model used to calculate the expected Return on Equity. It establishes a linear relationship between the required return of an investment and its systematic risk.",
+        "capm_def": "**Capital Asset Pricing Model (CAPM):** The CAPM is a financial model used to calculate the expected Return on Equity ($K_e$). It establishes a linear relationship between the required return of an investment and its systematic risk ($\\beta$).<br><br>**Formula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Risk-Free Rate (%)", "rm": "Market Return (%)", "beta": "Beta (β)", "tax": "Tax Rate (%)",
         "kd": "Cost of Debt (%)", "w_debt": "Debt Weighting (%)",
         "ke_res": "Cost of Equity (Ke)", "kd_res": "Cost of Debt post-tax (Kd)", "wacc_res": "Implied WACC",
@@ -40,7 +40,7 @@ t = {
         "lbo_title": "💰 LBO Quick-Modeler",
         "entry_m": "Entry Multiple (x)", "exit_m": "Exit Multiple (x)", "debt_f": "Debt Funding %",
         "pe_metrics": "Private Equity Metrics (5-Year Horizon)", "irr": "IRR", "moic": "MoIC",
-        "sens_hm": "📊 EV Sensitivity (WACC vs Terminal Growth)", "dl_val_xlsx": "📥 Export Valuation Model (Excel)"
+        "sens_hm": "📊 EV Sensitivity (WACC vs Terminal Growth)", "dl_val_xlsx": "📥 Export Valuation Model (Excel + Charts)"
     },
     "Français": {
         "title": "💼 Salle des Marchés M&A & Private Equity",
@@ -50,7 +50,7 @@ t = {
         "sb_title": "🏢 Données Financières de Base", "sb_info": "Saisissez les données financières de base de la cible (en MAD).",
         "b_rev": "Revenus de Base (MAD)", "b_ebitda": "EBITDA de Base (MAD)",
         "capm_title": "⚙️ Calculateur WACC Avancé (MEDAF)",
-        "capm_def": "**Modèle d'Évaluation des Actifs Financiers (MEDAF) :** Modèle financier utilisé pour calculer la rentabilité attendue des capitaux propres.",
+        "capm_def": "**Modèle d'Évaluation des Actifs Financiers (MEDAF) :** Modèle financier utilisé pour calculer la rentabilité attendue des capitaux propres ($K_e$).<br><br>**Formule :** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Taux Sans Risque (%)", "rm": "Rendement du Marché (%)", "beta": "Bêta (β)", "tax": "Taux d'Imposition (%)",
         "kd": "Coût de la Dette (%)", "w_debt": "Pondération de la Dette (%)",
         "ke_res": "Coût des Capitaux Propres (Ke)", "kd_res": "Coût de la Dette après impôts (Kd)", "wacc_res": "CMPC Implicite (WACC)",
@@ -63,7 +63,7 @@ t = {
         "lbo_title": "💰 Modélisateur LBO Rapide",
         "entry_m": "Multiple d'Entrée (x)", "exit_m": "Multiple de Sortie (x)", "debt_f": "Financement par Dette %",
         "pe_metrics": "Métriques Private Equity (Horizon 5 ans)", "irr": "TRI (IRR)", "moic": "Multiple (MoIC)",
-        "sens_hm": "📊 Sensibilité de la VE (WACC vs Croissance)", "dl_val_xlsx": "📥 Exporter le Modèle de Valorisation (Excel)"
+        "sens_hm": "📊 Sensibilité de la VE (WACC vs Croissance)", "dl_val_xlsx": "📥 Exporter le Modèle de Valorisation"
     },
     "Español": {
         "title": "💼 Sala de Fusiones y Capital Privado (M&A)",
@@ -73,7 +73,7 @@ t = {
         "sb_title": "🏢 Finanzas Base del Objetivo", "sb_info": "Ingrese las finanzas base de la empresa objetivo aquí (en MAD).",
         "b_rev": "Ingresos Base (MAD)", "b_ebitda": "EBITDA Base (MAD)",
         "capm_title": "⚙️ Calculadora WACC Avanzada",
-        "capm_def": "**Modelo de Valoración de Activos de Capital (CAPM):** Utilizado para calcular la rentabilidad esperada del capital.",
+        "capm_def": "**Modelo de Valoración de Activos de Capital (CAPM):** Utilizado para calcular la rentabilidad esperada del capital ($K_e$).<br><br>**Fórmula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Tasa Libre de Riesgo (%)", "rm": "Retorno del Mercado (%)", "beta": "Beta (β)", "tax": "Tasa Impositiva (%)",
         "kd": "Costo de la Deuda (%)", "w_debt": "Ponderación de Deuda (%)",
         "ke_res": "Costo del Capital (Ke)", "kd_res": "Costo de Deuda después de impuestos (Kd)", "wacc_res": "WACC Implícito",
@@ -86,7 +86,7 @@ t = {
         "lbo_title": "💰 Modelador LBO Rápido",
         "entry_m": "Múltiplo de Entrada (x)", "exit_m": "Múltiplo de Salida (x)", "debt_f": "Financiamiento de Deuda %",
         "pe_metrics": "Métricas de Capital Privado (Horizonte 5 años)", "irr": "TIR (IRR)", "moic": "Múltiplo (MoIC)",
-        "sens_hm": "📊 Sensibilidad del EV (WACC vs Crecimiento)", "dl_val_xlsx": "📥 Exportar Modelo de Valoración (Excel)"
+        "sens_hm": "📊 Sensibilidad del EV (WACC vs Crecimiento)", "dl_val_xlsx": "📥 Exportar Modelo de Valoración"
     },
     "العربية": {
         "title": "💼 غرفة صفقات الاندماج والاستحواذ (M&A)",
@@ -96,7 +96,7 @@ t = {
         "sb_title": "🏢 البيانات المالية الأساسية للشركة", "sb_info": "أدخل البيانات المالية الأساسية للشركة المستهدفة هنا (بالدرهم المغربي).",
         "b_rev": "الإيرادات الأساسية (MAD)", "b_ebitda": "الأرباح التشغيلية EBITDA (MAD)",
         "capm_title": "⚙️ حاسبة WACC المتقدمة (CAPM)",
-        "capm_def": "**نموذج تسعير الأصول الرأسمالية (CAPM):** هو نموذج مالي يُستخدم لحساب العائد المتوقع على حقوق الملكية.",
+        "capm_def": "**نموذج تسعير الأصول الرأسمالية (CAPM):** هو نموذج مالي يُستخدم لحساب العائد المتوقع على حقوق الملكية ($K_e$). ويقيم علاقة خطية بين العائد المطلوب للاستثمار والمخاطر المنهجية ($\\beta$).<br><br>**المعادلة:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "المعدل الخالي من المخاطر (%)", "rm": "عائد السوق (%)", "beta": "بيتا (β)", "tax": "نسبة الضريبة (%)",
         "kd": "تكلفة الدين (%)", "w_debt": "وزن الدين (%)",
         "ke_res": "تكلفة حقوق الملكية (Ke)", "kd_res": "تكلفة الدين بعد الضريبة (Kd)", "wacc_res": "المتوسط المرجح لتكلفة رأس المال (WACC)",
@@ -109,7 +109,7 @@ t = {
         "lbo_title": "💰 نموذج الاستحواذ المدعوم بالقروض (LBO)",
         "entry_m": "مضاعف الدخول (x)", "exit_m": "مضاعف التخارج (x)", "debt_f": "نسبة تمويل الديون %",
         "pe_metrics": "مقاييس الأسهم الخاصة (أفق 5 سنوات)", "irr": "معدل العائد الداخلي (IRR)", "moic": "مضاعف رأس المال (MoIC)",
-        "sens_hm": "📊 تحليل الحساسية (WACC مقابل النمو)", "dl_val_xlsx": "📥 تصدير نموذج التقييم (Excel)"
+        "sens_hm": "📊 تحليل الحساسية (WACC مقابل النمو)", "dl_val_xlsx": "📥 تصدير نموذج التقييم المتقدم (Excel)"
     }
 }
 txt = t[lang]
@@ -139,7 +139,7 @@ with st.expander(txt["glos_title"]):
     st.markdown(txt["glos_mc"])
     st.markdown(txt["glos_moic"])
 
-# --- SIDEBAR INPUTS (NATIVE MAD) ---
+# --- SIDEBAR INPUTS ---
 st.sidebar.markdown(f"### {txt['sb_title']}")
 st.sidebar.info(txt["sb_info"])
 base_rev = st.sidebar.number_input(txt["b_rev"], value=5000000.0, step=100000.0)
@@ -246,10 +246,9 @@ with col_lbo:
 
 st.markdown("---")
 
-# --- DCF SENSITIVITY HEATMAP ---
+# --- DCF SENSITIVITY HEATMAP (UI) ---
 st.subheader(txt["sens_hm"])
 
-# Generate matrix (+/- 2% for WACC, +/- 1% for Terminal Growth)
 wacc_range_dcf = np.linspace(max(0.01, wacc - 0.02), wacc + 0.02, 7)
 tg_range_dcf = np.linspace(max(0.0, tg - 0.01), tg + 0.01, 7)
 
@@ -272,21 +271,20 @@ st.plotly_chart(fig_heat_dcf, use_container_width=True)
 
 st.markdown("---")
 
-# --- EXPORT TO EXCEL ---
+# --- EXPORT TO EXCEL (WITH CHART & NATIVE HEATMAP) ---
 output_val = io.BytesIO()
 with pd.ExcelWriter(output_val, engine='xlsxwriter') as writer:
     workbook = writer.book
-    worksheet = workbook.add_worksheet('Valuation_Summary')
     
+    # 1. SUMMARY SHEET
+    worksheet = workbook.add_worksheet('Valuation_Summary')
     header_format = workbook.add_format({'bold': True, 'bg_color': '#1f77b4', 'font_color': 'white', 'border': 1})
     cell_format = workbook.add_format({'border': 1})
     
-    # Write Headers
     worksheet.write('A1', 'Metric', header_format)
     worksheet.write('B1', 'Value', header_format)
     worksheet.set_column('A:B', 25)
     
-    # Valuation Data
     data_val = [
         ("Base Revenue", f"{base_rev * rate:,.2f} {sym}"),
         ("Base EBITDA", f"{base_ebitda * rate:,.2f} {sym}"),
@@ -303,6 +301,50 @@ with pd.ExcelWriter(output_val, engine='xlsxwriter') as writer:
     for row_num, (metric, val) in enumerate(data_val, start=1):
         worksheet.write(row_num, 0, metric, cell_format)
         worksheet.write(row_num, 1, val, cell_format)
+        
+    # Add DCF Cash Flows to Sheet 1 for Charting
+    worksheet.write('D1', 'Year', header_format)
+    worksheet.write('E1', f'Projected FCF ({sym})', header_format)
+    worksheet.set_column('D:E', 20)
+    for i, cf in enumerate(cfs, start=1):
+        worksheet.write(i, 3, f"Year {i}", cell_format)
+        worksheet.write(i, 4, cf * rate, cell_format)
+        
+    # Insert Native Excel Chart for FCF
+    chart = workbook.add_chart({'type': 'column'})
+    chart.add_series({
+        'name': 'Free Cash Flow',
+        'categories': '=Valuation_Summary!$D$2:$D$6',
+        'values': '=Valuation_Summary!$E$2:$E$6',
+        'fill': {'color': '#2ca02c'}
+    })
+    chart.set_title({'name': '5-Year Projected FCF'})
+    worksheet.insert_chart('G2', chart)
+    
+    # 2. SENSITIVITY HEATMAP SHEET (Native Excel Conditional Formatting)
+    worksheet_hm = workbook.add_worksheet('Sensitivity_Heatmap')
+    worksheet_hm.write(0, 0, 'WACC \\ Growth', header_format)
+    
+    # Write Column Headers (Growth)
+    for col_idx, t_g in enumerate(tg_range_dcf, start=1):
+        worksheet_hm.write(0, col_idx, f"{t_g*100:.2f}%", header_format)
+        worksheet_hm.set_column(col_idx, col_idx, 15)
+        
+    # Write Row Headers (WACC) and Data Matrix
+    for row_idx, (w, row_data) in enumerate(zip(wacc_range_dcf, z_data_dcf), start=1):
+        worksheet_hm.write(row_idx, 0, f"{w*100:.2f}%", header_format)
+        for col_idx, val in enumerate(row_data, start=1):
+            worksheet_hm.write(row_idx, col_idx, val, cell_format)
+            
+    worksheet_hm.set_column(0, 0, 18)
+    
+    # Apply 3-Color Scale Conditional Formatting (Red -> Yellow -> Green) to mimic Heatmap
+    worksheet_hm.conditional_format(1, 1, len(wacc_range_dcf), len(tg_range_dcf), {
+        'type': '3_color_scale',
+        'min_color': '#f8696b', # Light Red
+        'mid_color': '#ffeb84', # Yellow/Orange
+        'max_color': '#63be7b'  # Light Green
+    })
 
 st.download_button(
     label=txt["dl_val_xlsx"],
