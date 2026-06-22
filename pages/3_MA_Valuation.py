@@ -21,13 +21,14 @@ sym = syms[curr]
 t = {
     "English": {
         "title": "💼 M&A & Private Equity Deal Room",
+        "banner_desc": "Advanced Valuation, LBO Modeling & Risk Analysis",
         "glos_title": "ℹ️ Glossary & Advanced Definitions",
-        "glos_mc": "**Monte Carlo Simulation:** A computational algorithm that relies on repeated random sampling to understand the impact of risk and uncertainty in the valuation.",
-        "glos_moic": "**MoIC (Multiple on Invested Capital):** Shows how much value an investment has generated (Exit Equity / Entry Equity).",
+        "glos_mc": "- **Monte Carlo Simulation:** A computational algorithm that relies on repeated random sampling to understand the impact of risk and uncertainty in the valuation.",
+        "glos_moic": "- **MoIC (Multiple on Invested Capital):** Shows how much value an investment has generated (Exit Equity / Entry Equity).",
         "sb_title": "🏢 Target Base Financials", "sb_info": "Input the target company's base financials here (in MAD).",
         "b_rev": "Base Revenue (MAD)", "b_ebitda": "Base EBITDA (MAD)",
         "capm_title": "⚙️ Advanced WACC Calculator",
-        "capm_def": "**Capital Asset Pricing Model (CAPM):** The CAPM is a financial model used to calculate the expected Return on Equity ($K_e$). It establishes a linear relationship between the required return of an investment and its systematic risk ($\\beta$).<br><br>**Formula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "capm_def": "**Capital Asset Pricing Model (CAPM):** The CAPM is a financial model used to calculate the expected Return on Equity ($K_e$). It establishes a linear relationship between the required return of an investment and its systematic risk ($\\beta$).\n\n**Formula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Risk-Free Rate (%)", "rm": "Market Return (%)", "beta": "Beta (β)", "tax": "Tax Rate (%)",
         "kd": "Cost of Debt (%)", "w_debt": "Debt Weighting (%)",
         "ke_res": "Cost of Equity (Ke)", "kd_res": "Cost of Debt post-tax (Kd)", "wacc_res": "Implied WACC",
@@ -44,13 +45,14 @@ t = {
     },
     "Français": {
         "title": "💼 Salle des Marchés M&A & Private Equity",
+        "banner_desc": "Valorisation Avancée, Modélisation LBO & Analyse des Risques",
         "glos_title": "ℹ️ Glossaire et Définitions",
-        "glos_mc": "**Simulation Monte Carlo :** Algorithme informatique basé sur un échantillonnage aléatoire répété pour évaluer l'impact du risque.",
-        "glos_moic": "**MoIC (Multiple sur le Capital Investi) :** Indique la valeur générée par un investissement.",
+        "glos_mc": "- **Simulation Monte Carlo :** Algorithme informatique basé sur un échantillonnage aléatoire répété pour évaluer l'impact du risque et de l'incertitude.",
+        "glos_moic": "- **MoIC (Multiple sur le Capital Investi) :** Indique la valeur générée par un investissement (Capitaux Propres de Sortie / Entrée).",
         "sb_title": "🏢 Données Financières de Base", "sb_info": "Saisissez les données financières de base de la cible (en MAD).",
         "b_rev": "Revenus de Base (MAD)", "b_ebitda": "EBITDA de Base (MAD)",
         "capm_title": "⚙️ Calculateur WACC Avancé (MEDAF)",
-        "capm_def": "**Modèle d'Évaluation des Actifs Financiers (MEDAF) :** Modèle financier utilisé pour calculer la rentabilité attendue des capitaux propres ($K_e$).<br><br>**Formule :** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "capm_def": "**Modèle d'Évaluation des Actifs Financiers (MEDAF) :** Modèle financier utilisé pour calculer la rentabilité attendue des capitaux propres ($K_e$). Il établit une relation linéaire entre la rentabilité requise et le risque systématique ($\\beta$).\n\n**Formule :** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Taux Sans Risque (%)", "rm": "Rendement du Marché (%)", "beta": "Bêta (β)", "tax": "Taux d'Imposition (%)",
         "kd": "Coût de la Dette (%)", "w_debt": "Pondération de la Dette (%)",
         "ke_res": "Coût des Capitaux Propres (Ke)", "kd_res": "Coût de la Dette après impôts (Kd)", "wacc_res": "CMPC Implicite (WACC)",
@@ -67,13 +69,14 @@ t = {
     },
     "Español": {
         "title": "💼 Sala de Fusiones y Capital Privado (M&A)",
+        "banner_desc": "Valoración Avanzada, Modelado LBO y Análisis de Riesgos",
         "glos_title": "ℹ️ Glosario y Definiciones Avanzadas",
-        "glos_mc": "**Simulación Monte Carlo:** Algoritmo computacional basado en muestreo aleatorio para comprender el impacto del riesgo.",
-        "glos_moic": "**MoIC (Múltiplo sobre Capital Invertido):** Muestra cuánto valor ha generado una inversión.",
+        "glos_mc": "- **Simulación Monte Carlo:** Algoritmo computacional basado en muestreo aleatorio repetido para comprender el impacto del riesgo.",
+        "glos_moic": "- **MoIC (Múltiplo sobre Capital Invertido):** Muestra cuánto valor ha generado una inversión.",
         "sb_title": "🏢 Finanzas Base del Objetivo", "sb_info": "Ingrese las finanzas base de la empresa objetivo aquí (en MAD).",
         "b_rev": "Ingresos Base (MAD)", "b_ebitda": "EBITDA Base (MAD)",
         "capm_title": "⚙️ Calculadora WACC Avanzada",
-        "capm_def": "**Modelo de Valoración de Activos de Capital (CAPM):** Utilizado para calcular la rentabilidad esperada del capital ($K_e$).<br><br>**Fórmula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "capm_def": "**Modelo de Valoración de Activos de Capital (CAPM):** El CAPM es un modelo financiero utilizado para calcular la rentabilidad esperada del capital ($K_e$). Establece una relación lineal entre la rentabilidad y el riesgo sistemático ($\\beta$).\n\n**Fórmula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Tasa Libre de Riesgo (%)", "rm": "Retorno del Mercado (%)", "beta": "Beta (β)", "tax": "Tasa Impositiva (%)",
         "kd": "Costo de la Deuda (%)", "w_debt": "Ponderación de Deuda (%)",
         "ke_res": "Costo del Capital (Ke)", "kd_res": "Costo de Deuda después de impuestos (Kd)", "wacc_res": "WACC Implícito",
@@ -90,13 +93,14 @@ t = {
     },
     "العربية": {
         "title": "💼 غرفة صفقات الاندماج والاستحواذ (M&A)",
+        "banner_desc": "التقييم المتقدم، النمذجة المالية وتحليل المخاطر",
         "glos_title": "ℹ️ مسرد المصطلحات والتعاريف المتقدمة",
-        "glos_mc": "**محاكاة مونت كارلو:** خوارزمية حسابية تعتمد على أخذ عينات عشوائية متكررة لفهم تأثير المخاطر وعدم اليقين في التقييم.",
-        "glos_moic": "**مضاعف رأس المال المستثمر (MoIC):** يوضح مقدار القيمة التي حققها الاستثمار.",
+        "glos_mc": "- **محاكاة مونت كارلو:** خوارزمية حسابية تعتمد على أخذ عينات عشوائية متكررة لفهم تأثير المخاطر وعدم اليقين في التقييم.",
+        "glos_moic": "- **مضاعف رأس المال المستثمر (MoIC):** يوضح مقدار القيمة التي حققها الاستثمار (حقوق الملكية عند التخارج / الدخول).",
         "sb_title": "🏢 البيانات المالية الأساسية للشركة", "sb_info": "أدخل البيانات المالية الأساسية للشركة المستهدفة هنا (بالدرهم المغربي).",
         "b_rev": "الإيرادات الأساسية (MAD)", "b_ebitda": "الأرباح التشغيلية EBITDA (MAD)",
         "capm_title": "⚙️ حاسبة WACC المتقدمة (CAPM)",
-        "capm_def": "**نموذج تسعير الأصول الرأسمالية (CAPM):** هو نموذج مالي يُستخدم لحساب العائد المتوقع على حقوق الملكية ($K_e$). ويقيم علاقة خطية بين العائد المطلوب للاستثمار والمخاطر المنهجية ($\\beta$).<br><br>**المعادلة:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "capm_def": "**نموذج تسعير الأصول الرأسمالية (CAPM):** هو نموذج مالي يُستخدم لحساب العائد المتوقع على حقوق الملكية ($K_e$). ويقيم علاقة خطية بين العائد المطلوب للاستثمار والمخاطر المنهجية ($\\beta$).\n\n**المعادلة:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "المعدل الخالي من المخاطر (%)", "rm": "عائد السوق (%)", "beta": "بيتا (β)", "tax": "نسبة الضريبة (%)",
         "kd": "تكلفة الدين (%)", "w_debt": "وزن الدين (%)",
         "ke_res": "تكلفة حقوق الملكية (Ke)", "kd_res": "تكلفة الدين بعد الضريبة (Kd)", "wacc_res": "المتوسط المرجح لتكلفة رأس المال (WACC)",
@@ -129,11 +133,22 @@ st.markdown(f"""
     .ma-card {{ background-color: #161a22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;}}
     .ma-card-title {{ color: #b3b3b3; font-size: 0.9rem; margin-bottom: 5px; }}
     .ma-card-value {{ color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }}
+    
+    /* M&A Banner Styling */
+    .banner {{ background: linear-gradient(90deg, #0e1117 0%, #3a1c71 100%); padding: 25px; border-radius: 10px; margin-bottom: 25px; border-left: 5px solid #9467bd; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }}
+    .banner h1 {{ color: white; margin: 0; font-size: 2.2rem; font-weight: 700; }}
+    .banner p {{ color: #e0e0e0; margin: 0; font-size: 1.1rem; margin-top: 8px; }}
     {rtl_css}
 </style>
 """, unsafe_allow_html=True)
 
-st.title(txt["title"])
+# --- BANNER (REPLACES st.title) ---
+st.markdown(f"""
+<div class="banner" {'dir="rtl"' if lang=="العربية" else ''}>
+    <h1>{txt['title']}</h1>
+    <p>{txt['banner_desc']}</p>
+</div>
+""", unsafe_allow_html=True)
 
 with st.expander(txt["glos_title"]):
     st.markdown(txt["glos_mc"])
