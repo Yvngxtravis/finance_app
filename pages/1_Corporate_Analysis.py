@@ -112,6 +112,18 @@ st.markdown(f"""
     .metric-box {{ background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }}
     .report-box {{ padding: 20px; border-radius: 10px; background-color: #161a22; border-left: 5px solid; margin-top: 20px; }}
     {rtl_css}
+    
+    /* =========================================
+       📱 MOBILE RESPONSIVENESS (SMART SCREENS)
+       ========================================= */
+    @media (max-width: 768px) {{
+        .block-container {{ padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
+        [data-testid="stDataFrame"] {{ overflow-x: auto !important; max-width: 100% !important; }}
+        .banner h1, .full-width-banner h1 {{ font-size: 1.6rem !important; }}
+        .banner p, .full-width-banner p {{ font-size: 0.9rem !important; }}
+        .js-plotly-plot, .plotly, .plot-container {{ max-width: 100% !important; }}
+        [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; min-width: 100% !important; margin-bottom: 15px !important; }}
+    }}
 </style>
 """, unsafe_allow_html=True)
 
