@@ -100,11 +100,12 @@ st.markdown(f"""
 @st.cache_data(ttl=3600) # Cache for 1 hour to prevent API limits
 def get_live_market_data():
     # Added Sonasid, Jet Contractors, and Colorado
-    tickers = {
+tickers = {
         "LafargeHolcim": "LHM.CM", 
         "Addoha": "ADH.CM", 
         "Alliances": "ADI.CM", 
         "Ciments du Maroc": "CMA.CM",
+        "TGCC": "TGC.CM",           # <--- هاني زدت الرمز ديال TGCC باش يولي الثمن ديالها لايڤ
         "Sonasid": "SND.CM",
         "Jet Contractors": "JET.CM",
         "Colorado": "COL.CM"
