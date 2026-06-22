@@ -11,14 +11,11 @@ from supabase import create_client, ClientOptions
 if "user" not in st.session_state or st.session_state.user is None:
     st.switch_page("app.py")
 
-# --- GLOBAL STATE INITIALIZATION ---
+# --- GLOBAL STATE ---
 lang = st.session_state.get("lang", "English")
 curr = st.session_state.get("currency", "MAD")
-rates = st.session_state.get("rates", {"MAD": 1.0, "USD": 0.10, "EUR": 0.09})
-syms = st.session_state.get("sym", {"MAD": "MAD", "USD": "$", "EUR": "€"})
-
-rate = rates[curr]
-sym = syms[curr]
+rate = st.session_state.get("rates", {"MAD": 1.0, "USD": 0.10, "EUR": 0.09})[curr]
+sym = st.session_state.get("sym", {"MAD": "MAD", "USD": "$", "EUR": "€"})[curr]
 
 # --- TRANSLATION DICTIONARY ---
 t = {
@@ -32,13 +29,11 @@ t = {
         "fav_n1": "Excellent liquidity management.", "fav_n2": "Strong operational profitability confirmed.", "fav_n3": "Optimal value creation for shareholders with attractive ROE.",
         "crit_n1": "Potential liquidity drain: Monitor short-term solvency.", "crit_n2": "Value destruction: Margins are below sector standards.", "crit_n3": "High dependency on debt or low operational efficiency.",
         "yoy_title": "📈 YoY Progression", "rev": "Revenue", "net": "Net Income",
-        "act_title": "💾 Actions & Reports", "save": "💾 Save to History", "dl_pdf": "📄 Download as a PDF",
-        "success_save": "✅ Saved successfully!", "fail_save": "⚠️ Failed to save.", "err_file": "⚠️ Error processing file. Ensure strict template format.",
-        # PDF specific (English)
+        "act_title": "💾 Actions & Reports", "save": "💾 Save to History", "dl_pdf": "📄 Download as a PDF", "dl_xlsx": "📥 Export to Excel",
+        "success_save": "✅ Saved successfully!", "fail_save": "⚠️ Failed to save.", "err_file": "⚠️ Error processing file.",
         "pdf_head": "COMPREHENSIVE FINANCIAL REPORT", "pdf_gen": "Generated on", "pdf_s1": "1. Financial Statements Overview & Variance",
         "pdf_col1": "Line Item", "pdf_col2": "YoY Growth (%)", "pdf_s2": "2. Key Performance Indicators",
-        "pdf_s3": "3. Scenario & Sensitivity Outlook", "pdf_sim_rev": "- Simulated Projected Revenue:", "pdf_sim_mar": "- Simulated Projected Net Margin:",
-        "pdf_s4": "4. Expert Diagnosis & Recommendations", "pdf_foot": "Strictly Confidential | M&A Advisory Desk - Z.ELAIDI Financial Hub"
+        "pdf_s3": "3. Scenario & Sensitivity Outlook", "pdf_s4": "4. Expert Diagnosis & Recommendations", "pdf_foot": "Strictly Confidential | M&A Advisory Desk - Z.ELAIDI Financial Hub"
     },
     "Français": {
         "title": "📈 Analyse d'Entreprise", "upload": "Importez le modèle financier Excel de votre entreprise.", "dl_temp": "📥 Télécharger le Modèle",
@@ -47,331 +42,98 @@ t = {
         "sim_rev": "Revenus Simulés", "sim_margin": "Marge Nette Simulée",
         "kpi_title": "📊 Indicateurs de Performance", "cr": "Ratio de Liquidité", "nm": "Marge Nette", "roe": "ROE",
         "diag_title": "💡 Diagnostic d'Expert", "fav": "Situation Financière Favorable", "crit": "Situation Financière Critique",
-        "fav_n1": "Excellente gestion de la liquidité.", "fav_n2": "Forte rentabilité opérationnelle confirmée.", "fav_n3": "Création de valeur optimale pour les actionnaires (ROE attractif).",
-        "crit_n1": "Risque de liquidité potentiel : Surveillez la solvabilité à court terme.", "crit_n2": "Destruction de valeur : Les marges sont inférieures aux normes du secteur.", "crit_n3": "Forte dépendance à la dette ou faible efficacité opérationnelle.",
+        "fav_n1": "Excellente gestion de la liquidité.", "fav_n2": "Forte rentabilité opérationnelle confirmée.", "fav_n3": "Création de valeur optimale pour les actionnaires.",
+        "crit_n1": "Risque de liquidité potentiel : Surveillez la solvabilité.", "crit_n2": "Destruction de valeur : Marges inférieures aux normes.", "crit_n3": "Forte dépendance à la dette.",
         "yoy_title": "📈 Progression Annuelle", "rev": "Revenus", "net": "Revenu Net",
-        "act_title": "💾 Actions & Rapports", "save": "💾 Sauvegarder dans l'Historique", "dl_pdf": "📄 Télécharger en PDF",
-        "success_save": "✅ Sauvegardé avec succès !", "fail_save": "⚠️ Échec de la sauvegarde.", "err_file": "⚠️ Erreur de traitement. Assurez-vous du format du modèle.",
-        # PDF specific (Français)
+        "act_title": "💾 Actions & Rapports", "save": "💾 Sauvegarder dans l'Historique", "dl_pdf": "📄 Télécharger en PDF", "dl_xlsx": "📥 Exporter vers Excel",
+        "success_save": "✅ Sauvegardé avec succès !", "fail_save": "⚠️ Échec de la sauvegarde.", "err_file": "⚠️ Erreur de traitement.",
         "pdf_head": "RAPPORT FINANCIER COMPLET", "pdf_gen": "Généré le", "pdf_s1": "1. Aperçu des États Financiers et Écarts",
         "pdf_col1": "Poste", "pdf_col2": "Croissance Annuelle (%)", "pdf_s2": "2. Indicateurs Clés de Performance",
-        "pdf_s3": "3. Perspectives de Sensibilité", "pdf_sim_rev": "- Revenus Projetés Simulés :", "pdf_sim_mar": "- Marge Nette Projetée Simulée :",
-        "pdf_s4": "4. Diagnostic d'Expert et Recommandations", "pdf_foot": "Strictement Confidentiel | Bureau de Conseil M&A - Z.ELAIDI Financial Hub"
+        "pdf_s3": "3. Perspectives de Sensibilité", "pdf_s4": "4. Diagnostic d'Expert", "pdf_foot": "Strictement Confidentiel | Bureau de Conseil M&A"
     },
     "Español": {
-        "title": "📈 Análisis Corporativo", "upload": "Sube la plantilla financiera en Excel de tu empresa.", "dl_temp": "📥 Descargar Plantilla",
+        "title": "📈 Análisis Corporativo", "upload": "Sube la plantilla financiera en Excel.", "dl_temp": "📥 Descargar Plantilla",
         "var_title": "📋 Análisis de Variaciones", "sens_title": "🎛️ Sensibilidad (Escenarios)", 
         "rev_growth": "Crecimiento de Ingresos (%)", "cost_red": "Reducción de Costes (%)",
         "sim_rev": "Ingresos Simulados", "sim_margin": "Margen Neto Simulado",
         "kpi_title": "📊 Ratios de Rendimiento", "cr": "Ratio de Liquidez", "nm": "Margen Neto", "roe": "ROE",
         "diag_title": "💡 Diagnóstico de Expertos", "fav": "Situación Financiera Favorable", "crit": "Situación Financiera Crítica",
-        "fav_n1": "Excelente gestión de la liquidez.", "fav_n2": "Fuerte rentabilidad operativa confirmada.", "fav_n3": "Óptima creación de valor para los accionistas (ROE atractivo).",
-        "crit_n1": "Riesgo de liquidez: Monitorear solvencia a corto plazo.", "crit_n2": "Destrucción de valor: Márgenes por debajo de los estándares del sector.", "crit_n3": "Alta dependencia de la deuda o baja eficiencia operativa.",
+        "fav_n1": "Excelente gestión de la liquidez.", "fav_n2": "Fuerte rentabilidad operativa.", "fav_n3": "Óptima creación de valor.",
+        "crit_n1": "Riesgo de liquidez a corto plazo.", "crit_n2": "Márgenes por debajo de estándares.", "crit_n3": "Alta dependencia de deuda.",
         "yoy_title": "📈 Progresión Interanual", "rev": "Ingresos", "net": "Ingreso Neto",
-        "act_title": "💾 Acciones y Reportes", "save": "💾 Guardar en Historial", "dl_pdf": "📄 Descargar como PDF",
-        "success_save": "✅ ¡Guardado exitosamente!", "fail_save": "⚠️ Error al guardar.", "err_file": "⚠️ Error al procesar el archivo. Asegure el formato de la plantilla.",
-        # PDF specific (Español)
-        "pdf_head": "INFORME FINANCIERO COMPLETO", "pdf_gen": "Generado el", "pdf_s1": "1. Resumen de Estados Financieros y Variaciones",
-        "pdf_col1": "Partida", "pdf_col2": "Crecimiento Interanual (%)", "pdf_s2": "2. Indicadores Clave de Rendimiento",
-        "pdf_s3": "3. Perspectivas de Sensibilidad", "pdf_sim_rev": "- Ingresos Proyectados Simulados:", "pdf_sim_mar": "- Margen Neto Proyectado Simulado:",
-        "pdf_s4": "4. Diagnóstico de Expertos y Recomendaciones", "pdf_foot": "Estrictamente Confidencial | Asesoría M&A - Z.ELAIDI Financial Hub"
+        "act_title": "💾 Acciones y Reportes", "save": "💾 Guardar en Historial", "dl_pdf": "📄 Descargar como PDF", "dl_xlsx": "📥 Exportar a Excel",
+        "success_save": "✅ ¡Guardado exitosamente!", "fail_save": "⚠️ Error al guardar.", "err_file": "⚠️ Error al procesar.",
+        "pdf_head": "INFORME FINANCIERO COMPLETO", "pdf_gen": "Generado el", "pdf_s1": "1. Estados Financieros y Variaciones",
+        "pdf_col1": "Partida", "pdf_col2": "Crecimiento Interanual (%)", "pdf_s2": "2. Indicadores Clave",
+        "pdf_s3": "3. Perspectivas de Sensibilidad", "pdf_s4": "4. Diagnóstico de Expertos", "pdf_foot": "Estrictamente Confidencial | Asesoría M&A"
     },
     "العربية": {
-        "title": "📈 تحليل الشركات", "upload": "قم برفع نموذج الإكسل المالي لشركتك.", "dl_temp": "📥 تنزيل النموذج",
+        "title": "📈 تحليل الشركات", "upload": "قم برفع نموذج الإكسل المالي.", "dl_temp": "📥 تنزيل النموذج",
         "var_title": "📋 تحليل التغيرات", "sens_title": "🎛️ تحليل الحساسية (محاكاة)", 
         "rev_growth": "نمو الإيرادات (%)", "cost_red": "تخفيض التكاليف (%)",
-        "sim_rev": "الإيرادات المحاكية", "sim_margin": "هامش الربح الصافي المحاكى",
-        "kpi_title": "📊 مؤشرات الأداء الرئيسية", "cr": "نسبة التداول (السيولة)", "nm": "هامش الربح الصافي", "roe": "العائد على حقوق المساهمين",
+        "sim_rev": "الإيرادات المحاكية", "sim_margin": "هامش الربح المحاكى",
+        "kpi_title": "📊 مؤشرات الأداء", "cr": "نسبة السيولة", "nm": "هامش الربح الصافي", "roe": "العائد على حقوق المساهمين",
         "diag_title": "💡 تشخيص الخبراء", "fav": "وضع مالي ملائم", "crit": "وضع مالي حرج",
-        "fav_n1": "إدارة ممتازة للسيولة النقدية.", "fav_n2": "ربحية تشغيلية قوية ومؤكدة.", "fav_n3": "خلق قيمة مثالية للمساهمين مع عائد جذاب.",
-        "crit_n1": "استنزاف محتمل للسيولة: راقب الملاءة المالية قصيرة الأجل.", "crit_n2": "تدمير القيمة: هوامش الربح أقل من معايير القطاع.", "crit_n3": "اعتماد كبير على الديون أو كفاءة تشغيلية منخفضة.",
+        "fav_n1": "إدارة ممتازة للسيولة.", "fav_n2": "ربحية تشغيلية قوية.", "fav_n3": "خلق قيمة ممتازة للمساهمين.",
+        "crit_n1": "استنزاف محتمل للسيولة.", "crit_n2": "هوامش ربح ضعيفة.", "crit_n3": "اعتماد كبير على الديون.",
         "yoy_title": "📈 التطور السنوي", "rev": "الإيرادات", "net": "صافي الدخل",
-        "act_title": "💾 الإجراءات والتقارير", "save": "💾 حفظ في السجل", "dl_pdf": "📄 تنزيل كملف PDF",
-        "success_save": "✅ تم الحفظ بنجاح!", "fail_save": "⚠️ فشل الحفظ.", "err_file": "⚠️ خطأ في معالجة الملف. يرجى التأكد من التنسيق."
+        "act_title": "💾 الإجراءات والتقارير", "save": "💾 حفظ في السجل", "dl_pdf": "📄 تنزيل كملف PDF", "dl_xlsx": "📥 تصدير إلى Excel",
+        "success_save": "✅ تم الحفظ بنجاح!", "fail_save": "⚠️ فشل الحفظ.", "err_file": "⚠️ خطأ في معالجة الملف.",
+        "pdf_head": "تقرير مالي مفصل", "pdf_gen": "تاريخ الإنشاء", "pdf_s1": "1. نظرة عامة على القوائم المالية",
+        "pdf_col1": "البيان", "pdf_col2": "التطور السنوي (%)", "pdf_s2": "2. مؤشرات الأداء الرئيسية",
+        "pdf_s3": "3. تحليل الحساسية", "pdf_s4": "4. تشخيص الخبراء", "pdf_foot": "سري للغاية | مكتب استشارات الاندماج والاستحواذ"
     }
 }
-
 txt = t[lang]
-
-# PDF Fallback logic: FPDF breaks with Arabic, so we fallback to English for the PDF engine if Arabic is selected.
 pdf_lang = lang if lang != "العربية" else "English"
 pdf_txt = t[pdf_lang]
 
-# --- UI STYLING & CSS HACKS ---
-rtl_css = ""
-if lang == "العربية":
-    rtl_css = """
-    .block-container { direction: rtl; text-align: right; }
-    [data-testid="stSidebar"], [data-testid="stSidebarNav"], [data-testid="collapsedControl"], [data-testid="stHeader"] { direction: ltr !important; text-align: left !important; }
-    """
-
+# --- UI CSS ---
 st.markdown(f"""
 <style>
-    [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
-    [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     .metric-box {{ background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }}
     .report-box {{ padding: 20px; border-radius: 10px; background-color: #161a22; border-left: 5px solid; margin-top: 20px; }}
-    {rtl_css}
+    {'[data-testid="stSidebar"], [data-testid="stSidebarNav"], [data-testid="stHeader"] { direction: ltr; }' if lang == "العربية" else ''}
 </style>
 """, unsafe_allow_html=True)
 
 st.title(txt["title"])
 
-# --- SUPABASE INIT ---
-try:
-    supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"], options=ClientOptions(postgrest_client_timeout=10))
-except Exception:
-    st.error("Database connection failed.")
-    st.stop()
+# --- VALIDATOR ---
+REQUIRED_COLUMNS = ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Total Equity"]
+def validate_excel(df):
+    missing = [col for col in REQUIRED_COLUMNS if col not in df.index]
+    return (False, f"Missing: {', '.join(missing)}") if missing else (True, None)
 
-def save_history(user_id, email, data_dict):
-    try:
-        supabase.table("users_history").insert({"user_id": user_id, "email": email, "work_data": json.dumps(data_dict)}).execute()
-        return True
-    except Exception: return False
-
-def generate_template():
-    df_template = pd.DataFrame({"Line_Item": ["Revenue", "Net Income", "Current Assets", "Current Liabilities", "Inventory", "Total Assets", "Total Equity", "Total Debt"], "2024": [0]*8, "2025": [0]*8})
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer: df_template.to_excel(writer, index=False)
-    return output.getvalue()
-
-# --- RICH DETAILED PDF GENERATOR ---
-def create_rich_pdf(df_display, net_margin, roe, current_ratio, sim_rev, sim_margin, diagnosis, p_txt, p_sym):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_margins(15, 15, 15)
-    
-    # 1. HEADER
-    pdf.set_fill_color(31, 119, 180) 
-    pdf.rect(0, 0, 210, 35, 'F')
-    pdf.set_y(12)
-    pdf.set_font("Arial", 'B', 18)
-    pdf.set_text_color(255, 255, 255)
-    # Replaced UTF-8 chars in Title to avoid FPDF errors, simple uppercase strings
-    pdf.cell(0, 10, p_txt["pdf_head"].encode('latin-1', 'replace').decode('latin-1'), ln=True, align='C')
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 6, f"{p_txt['pdf_gen']}: {datetime.now().strftime('%d %b %Y - %H:%M')}", ln=True, align='C')
-    
-    pdf.set_y(45)
-    pdf.set_text_color(0, 0, 0)
-    
-    # 2. FINANCIAL STATEMENTS TABLE
-    pdf.set_font("Arial", 'B', 12)
-    pdf.set_fill_color(240, 240, 240)
-    pdf.cell(0, 10, f" {p_txt['pdf_s1']}", border=1, ln=True, fill=True)
-    pdf.ln(5)
-    
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(65, 8, p_txt["pdf_col1"], border=1)
-    pdf.cell(35, 8, f"FY 2024 ({p_sym})", border=1, align='C')
-    pdf.cell(35, 8, f"FY 2025 ({p_sym})", border=1, align='C')
-    pdf.cell(45, 8, p_txt["pdf_col2"], border=1, align='C', ln=True)
-    
-    pdf.set_font("Arial", '', 10)
-    for index, row in df_display.iterrows():
-        # Clean index strings for FPDF
-        safe_index = str(index).encode('latin-1', 'replace').decode('latin-1')
-        pdf.cell(65, 8, safe_index, border=1)
-        pdf.cell(35, 8, f"{row.iloc[0]:,.0f}", border=1, align='R')
-        pdf.cell(35, 8, f"{row.iloc[1]:,.0f}", border=1, align='R')
-        
-        val = row['YoY Growth (%)']
-        var_text = f"{val:.2f}%" if pd.notnull(val) else "N/A"
-        pdf.cell(45, 8, var_text, border=1, align='R', ln=True)
-        
-    pdf.ln(8)
-    
-    # 3. KEY PERFORMANCE RATIOS
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f" {p_txt['pdf_s2']} (FY 2025)", border=1, ln=True, fill=True)
-    pdf.ln(5)
-    
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(50, 8, f"{p_txt['nm']}:", border=0)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 8, f"{net_margin:.2f}%", border=0, ln=True)
-    
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(50, 8, f"{p_txt['roe']}:", border=0)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 8, f"{roe:.2f}%", border=0, ln=True)
-    
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(50, 8, f"{p_txt['cr']}:", border=0)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 8, f"{current_ratio:.2f}x", border=0, ln=True)
-    pdf.ln(8)
-    
-    # 4. SENSITIVITY OUTLOOK
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f" {p_txt['pdf_s3']}", border=1, ln=True, fill=True)
-    pdf.ln(5)
-    pdf.set_font("Arial", '', 11)
-    pdf.cell(0, 7, f"{p_txt['pdf_sim_rev']} {sim_rev:,.2f} {p_sym}", ln=True)
-    pdf.cell(0, 7, f"{p_txt['pdf_sim_mar']} {sim_margin:.2f}%", ln=True)
-    pdf.ln(8)
-
-    # 5. DIAGNOSIS
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f" {p_txt['pdf_s4']}", border=1, ln=True, fill=True)
-    pdf.ln(5)
-    pdf.set_font("Arial", '', 11)
-    
-    for note in diagnosis:
-        pdf.set_x(15)
-        # Handle accents in Fr/Es for FPDF
-        safe_note = note.encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(0, 7, txt=f"- {safe_note}")
-        
-    # Footer
-    pdf.set_y(-20)
-    pdf.set_font("Arial", 'I', 9)
-    pdf.set_text_color(150, 150, 150)
-    pdf.line(15, 275, 195, 275)
-    pdf.cell(0, 10, p_txt["pdf_foot"].encode('latin-1', 'replace').decode('latin-1'), align='C')
-    
-    return bytes(pdf.output())
-
-# --- THE UI ---
-c1, c2 = st.columns([3, 1])
-with c1: st.write(txt["upload"])
-with c2: st.download_button(txt["dl_temp"], data=generate_template(), file_name="Template.xlsx", use_container_width=True)
-
-uploaded_file = st.file_uploader("Upload Excel (.xlsx)", type=["xlsx"], label_visibility="collapsed")
-
+# --- APP LOGIC ---
+uploaded_file = st.file_uploader("Upload Excel", type=["xlsx"])
 if uploaded_file:
     try:
-        df_finance = pd.read_excel(uploaded_file)
-        df_finance.columns = [str(c).strip() for c in df_finance.columns]
-        df_finance.set_index(df_finance.columns[0], inplace=True)
+        df_finance = pd.read_excel(uploaded_file, index_col=0)
+        df_finance.index = df_finance.index.str.strip()
+        is_valid, err = validate_excel(df_finance)
+        if not is_valid: st.error(err); st.stop()
         
         col_24, col_25 = df_finance.columns[0], df_finance.columns[1]
         
+        # Calculations
         df_display = df_finance.copy()
-        # APPLY CURRENCY CONVERSION MULTIPLIER TO ABSOLUTE VALUES
         df_display[col_24] = pd.to_numeric(df_display[col_24], errors='coerce') * rate
         df_display[col_25] = pd.to_numeric(df_display[col_25], errors='coerce') * rate
         df_display['YoY Growth (%)'] = ((df_display[col_25] - df_display[col_24]) / df_display[col_24]) * 100
         
-        def color_variance(row):
-            item = str(row.name).lower()
-            val = row['YoY Growth (%)']
-            if pd.isna(val): return [''] * len(row)
-            if ('liability' in item or 'debt' in item) and val > 0: color = '#d62728'
-            elif val > 0: color = '#2ca02c'
-            else: color = '#d62728'
-            return [f'color: {color}' if col == 'YoY Growth (%)' else '' for col in row.index]
-
-        left_col, right_col = st.columns([1.5, 1], gap="large")
+        # 1. SENSITIVITY HEATMAP
+        st.subheader(txt["sens_title"])
+        wacc = st.slider("WACC %", 5.0, 15.0, 10.0, 0.5) / 100
+        growth = st.slider("Terminal Growth %", 1.0, 5.0, 2.0, 0.5) / 100
         
-        with left_col:
-            st.subheader(txt["var_title"])
-            # Using format to append the currency symbol to the column headers implicitly or format raw values
-            st.dataframe(df_display.style.apply(color_variance, axis=1).format(
-                {col_24: f"{{:,.0f}} {sym}", col_25: f"{{:,.0f}} {sym}", 'YoY Growth (%)': "{:.2f}%"}
-            ), use_container_width=True)
-
-            rev_24, rev_25 = float(df_display.loc["Revenue", col_24]), float(df_display.loc["Revenue", col_25])
-            net_24, net_25 = float(df_display.loc["Net Income", col_24]), float(df_display.loc["Net Income", col_25])
-            ca_25, cl_25 = float(df_display.loc["Current Assets", col_25]), float(df_display.loc["Current Liabilities", col_25])
-            eq_25 = float(df_display.loc["Total Equity", col_25])
-            
-            user_net_margin = (net_25 / rev_25) * 100 if rev_25 > 0 else 0
-            user_roe = (net_25 / eq_25) * 100 if eq_25 > 0 else 0
-            current_ratio = ca_25 / cl_25 if cl_25 > 0 else 0
-
-        with right_col:
-            st.subheader(txt["sens_title"])
-            sim_rev_exact = st.number_input(txt["rev_growth"], -30, 30, 0, step=1)
-            sim_cost_exact = st.number_input(txt["cost_red"], 0, 30, 0, step=1)
-            
-            sim_rev = rev_25 * (1 + (sim_rev_exact/100))
-            sim_costs = (rev_25 - net_25) * (1 - (sim_cost_exact/100))
-            sim_net = sim_rev - sim_costs
-            sim_margin = (sim_net / sim_rev * 100) if sim_rev > 0 else 0
-            
-            st.markdown(f"""
-            <div class="metric-box">
-                <p style="margin:0; color:#b3b3b3; font-size:14px;">{txt['sim_rev']} ({sym})</p>
-                <h3 style="margin:0; color:#2ca02c;">{sim_rev:,.2f}</h3>
-            </div>
-            <div class="metric-box">
-                <p style="margin:0; color:#b3b3b3; font-size:14px;">{txt['sim_margin']}</p>
-                <h3 style="margin:0; color:#1f77b4;">{sim_margin:.2f}%</h3>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("---")
+        # 2. DATA TABLE
+        st.dataframe(df_display.style.format({col_24: f"{{:,.0f}} {sym}", col_25: f"{{:,.0f}} {sym}", 'YoY Growth (%)': "{:.2f}%"}), use_container_width=True)
         
-        st.subheader(txt["kpi_title"])
-        cr1, cr2, cr3 = st.columns(3)
-        cr1.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=current_ratio, title={'text': txt['cr']}, gauge={'axis': {'range': [0, 3]}, 'bar': {'color': "#2ca02c"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-        cr2.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_net_margin, number={'suffix': "%"}, title={'text': txt['nm']}, gauge={'axis': {'range': [0, 30]}, 'bar': {'color': "#1f77b4"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
-        cr3.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=user_roe, number={'suffix': "%"}, title={'text': txt['roe']}, gauge={'axis': {'range': [0, 40]}, 'bar': {'color': "#9467bd"}})).update_layout(height=180, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark"), use_container_width=True)
+        # 3. EXPORT EXCEL
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_display.to_excel(writer, sheet_name="Analysis")
+        st.download_button(txt["dl_xlsx"], data=output.getvalue(), file_name="Analysis.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
-        st.markdown("---")
-
-        col_diag, col_chart = st.columns([1, 1], gap="large")
-        with col_diag:
-            st.subheader(txt["diag_title"])
-            score_positif = sum([current_ratio >= 1.2, user_net_margin >= 8.0, user_roe >= 12.0])
-            if score_positif >= 2:
-                color, status = "#2ca02c", txt["fav"]
-                selected_nbs = [txt["fav_n1"], txt["fav_n2"], txt["fav_n3"]]
-                # Note for PDF generation (English Fallback handling)
-                pdf_notes = [pdf_txt["fav_n1"], pdf_txt["fav_n2"], pdf_txt["fav_n3"]]
-            else:
-                color, status = "#d62728", txt["crit"]
-                selected_nbs = [txt["crit_n1"], txt["crit_n2"], txt["crit_n3"]]
-                pdf_notes = [pdf_txt["crit_n1"], pdf_txt["crit_n2"], pdf_txt["crit_n3"]]
-                
-            st.markdown(f"""
-            <div class="report-box" style="border-color: {color};">
-                <h4 style="color: {color}; margin-top: 0;">{status}</h4>
-                <ul style="padding-inline-start: 20px;">
-                    <li style="color: #b3b3b3;">{selected_nbs[0]}</li>
-                    <li style="color: #b3b3b3;">{selected_nbs[1]}</li>
-                    <li style="color: #b3b3b3;">{selected_nbs[2]}</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col_chart:
-            st.subheader(txt["yoy_title"])
-            fig_yoy = go.Figure()
-            fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[rev_24, rev_25], name=txt['rev'], marker_color='#1f77b4'))
-            fig_yoy.add_trace(go.Bar(x=['2024', '2025'], y=[net_24, net_25], name=txt['net'], marker_color='#2ca02c'))
-            fig_yoy.update_layout(barmode='group', template="plotly_dark", height=250, margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(fig_yoy, use_container_width=True)
-
-        st.markdown("---")
-        st.subheader(txt["act_title"])
-        c_action1, c_action2 = st.columns(2)
-        
-        with c_action1:
-            if st.button(txt["save"], use_container_width=True):
-                session_data = {
-                    "Session_Name": f"Analysis - {datetime.now().strftime('%Y-%m-%d %H:%M')}", 
-                    "Revenue": rev_25, 
-                    "Net Margin": round(user_net_margin, 2), 
-                    "ROE": round(user_roe, 2), 
-                    "Current Ratio": round(current_ratio, 2), 
-                    "Date": datetime.now().strftime('%Y-%m-%d %H:%M')
-                }
-                if save_history(st.session_state.user.id, st.session_state.user.email, session_data): st.success(txt["success_save"])
-                else: st.error(txt["fail_save"])
-                    
-        with c_action2:
-            pdf_bytes = create_rich_pdf(df_display, user_net_margin, user_roe, current_ratio, sim_rev, sim_margin, pdf_notes, pdf_txt, sym)
-            st.download_button(
-                label=txt["dl_pdf"],
-                data=pdf_bytes,
-                file_name="Detailed_Financial_Report.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-                type="primary"
-            )
-            
-    except Exception as e:
-        st.error(f"{txt['err_file']} {str(e)}")
+    except Exception as e: st.error(f"{txt['err_file']} {str(e)}")
