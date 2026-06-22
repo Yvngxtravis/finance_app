@@ -1,239 +1,347 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np
+from supabase import create_client, ClientOptions
 
-# --- SECURITY ---
-if "user" not in st.session_state or st.session_state.user is None:
-    st.switch_page("app.py")
+# MUST BE THE FIRST LINE
+st.set_page_config(
+    page_title="Z.ELAIDI - Financial Hub", 
+    layout="wide", 
+    page_icon="📊", 
+    initial_sidebar_state="collapsed" 
+)
 
-# --- GLOBAL STATE INITIALIZATION ---
-lang = st.session_state.get("lang", "English")
-curr = st.session_state.get("currency", "MAD")
-rates = st.session_state.get("rates", {"MAD": 1.0, "USD": 0.10, "EUR": 0.09})
-syms = st.session_state.get("sym", {"MAD": "MAD", "USD": "$", "EUR": "€"})
+# ==========================================
+# 1. GLOBAL STATE INITIALIZATION (LANG & CURRENCY)
+# ==========================================
+if "lang" not in st.session_state: st.session_state.lang = "English"
+if "currency" not in st.session_state: st.session_state.currency = "MAD"
+if "rates" not in st.session_state: st.session_state.rates = {"MAD": 1.0, "USD": 0.10, "EUR": 0.09}
+if "sym" not in st.session_state: st.session_state.sym = {"MAD": "MAD", "USD": "$", "EUR": "€"}
 
-rate = rates[curr]
-sym = syms[curr]
-
-# --- TRANSLATION DICTIONARY ---
+# --- TRANSLATION DICTIONARY FOR APP.PY ---
 t = {
     "English": {
-        "banner_h": "🏗️ BTP Sector Benchmark", "banner_p": "Compare your target company against Casablanca Stock Exchange peers.",
-        "target_title": "🎯 Configure Target Data", "proj_name": "Project Name", "nm": "Net Margin (%)", "roe": "ROE (%)",
-        "gearing": "Gearing (Debt/Equity %)", "pe": "Implied P/E Ratio", "help_gearing": "BTP average is ~80%.",
-        "info_update": "💡 Charts and tables update automatically.", "data_title": "📊 Market Data Overview",
-        "p1_title": "⚖️ 1. Peer Comparison: Profitability & Returns", "select_peers": "Select Competitors to Compare:",
-        "p2_title": "⚠️ 2. BTP Risk/Reward Matrix", "p2_desc": "Compares Profitability (ROE) vs Financial Risk (Gearing).",
-        "p3_title": "🕸️ 3. 360° Sector Profile", "p3_desc": "Radar chart comparing your target against the market average.",
-        "col_price": f"Price ({sym})", "your_target": "Your Target", "market_peer": "Market Peer"
+        "login_title": "SYSTEM ACCESS", "email": "Corporate Email", "pass": "Password", "auth": "Authenticate", "sys": "**System**",
+        "welcome": "👋 Welcome back,", "settings": "⚙️ Settings & Profile", "profile": "**User Profile**", "pref": "**Preferences**",
+        "curr_lbl": "Default Currency", "lang_lbl": "Platform Language", "docs": "📖 Platform Docs", "logout": "🚪 Terminate Session",
+        "cse": "Casablanca Stock Exchange", "subtitle": "BTP Sector Equity Research & Financial Analytics Hub", "badge": "🇲🇦 Moroccan Market Focus",
+        "tracked": "Tracked Companies", "avg_pe": "Sector Average P/E", "top_stock": "Highest Priced Stock", "entities": "Entities",
+        "nav": "🚀 Quick Navigation Modules",
+        "ca_title": "📉 Corporate Analysis", "ca_desc": "Upload Excel models, run variance analysis, and generate investment teasers.",
+        "bb_title": "⚖️ Sector Benchmark", "bb_desc": "Compare target operational margins, liquidity, and ROE against Moroccan peers.",
+        "ma_title": "💼 M&A Deal Room", "ma_desc": "Execute LBO Quick-Models, Advanced CAPM, and Monte Carlo DCF simulations.",
+        "lc_title": "💹 Live Charts", "lc_desc": "Track real-time market trends, volatility, and historical pricing data.",
+        "mh_title": "🗄️ My History", "mh_desc": "Access, manage, and download your previously saved analysis sessions.",
+        "ac_title": "👤 About Creator", "ac_desc": "Professional profile, academic background, and networking links.",
+        "launch": "Launch Module",
+        # Docs Section
+        "doc_head": "📖 Financial Methodology & Engine Specs",
+        "doc_wacc": "#### ⚙️ 1. Cost of Capital (WACC & CAPM)",
+        "doc_wacc_desc": "The platform calculates the Cost of Equity using the Capital Asset Pricing Model (CAPM). For Moroccan targets, the Risk-Free Rate is typically benchmarked against the 10-Year Moroccan Treasury Bond. The resulting WACC is used as the standard discount rate.",
+        "doc_dcf": "#### 📊 2. Discounted Cash Flow (DCF)",
+        "doc_dcf_desc": "The DCF engine uses a 5-year explicit Free Cash Flow forecast. The Terminal Value is derived via the Gordon Growth Model, assuming a perpetual growth rate aligned with long-term inflation.",
+        "doc_lbo": "#### 💰 3. Leveraged Buyout (LBO)",
+        "doc_lbo_desc": "The LBO quick-modeler assumes a 5-year holding horizon. Entry and Exit Enterprise Values are driven by EBITDA multiples. Return metrics (IRR & MoIC) evaluate the equity value creation post-debt paydown."
     },
     "Français": {
-        "banner_h": "🏗️ Benchmark du Secteur BTP", "banner_p": "Comparez votre entreprise cible avec ses pairs de la Bourse de Casablanca.",
-        "target_title": "🎯 Configurer les Données Cibles", "proj_name": "Nom du Projet", "nm": "Marge Nette (%)", "roe": "ROE (%)",
-        "gearing": "Gearing (Dette/Capitaux Propres %)", "pe": "Ratio P/E Implicite", "help_gearing": "La moyenne du BTP est d'environ 80%.",
-        "info_update": "💡 Les graphiques et tableaux se mettent à jour automatiquement.", "data_title": "📊 Aperçu des Données du Marché",
-        "p1_title": "⚖️ 1. Comparaison: Rentabilité & Rendements", "select_peers": "Sélectionnez les concurrents à comparer :",
-        "p2_title": "⚠️ 2. Matrice Risque/Rendement BTP", "p2_desc": "Compare la Rentabilité (ROE) au Risque Financier (Gearing).",
-        "p3_title": "🕸️ 3. Profil Sectoriel à 360°", "p3_desc": "Graphique radar comparant votre cible à la moyenne du marché.",
-        "col_price": f"Prix ({sym})", "your_target": "Votre Cible", "market_peer": "Pair du Marché"
+        "login_title": "ACCÈS SYSTÈME", "email": "Email Professionnel", "pass": "Mot de passe", "auth": "S'authentifier", "sys": "**Système**",
+        "welcome": "👋 Bon retour,", "settings": "⚙️ Paramètres & Profil", "profile": "**Profil Utilisateur**", "pref": "**Préférences**",
+        "curr_lbl": "Devise par défaut", "lang_lbl": "Langue de la plateforme", "docs": "📖 Documentation", "logout": "🚪 Déconnexion",
+        "cse": "Bourse de Casablanca", "subtitle": "Plateforme d'Analyse Financière et Recherche BTP", "badge": "🇲🇦 Focus Marché Marocain",
+        "tracked": "Entreprises Suivies", "avg_pe": "P/E Moyen", "top_stock": "Action la plus chère", "entities": "Entités",
+        "nav": "🚀 Modules de Navigation Rapide",
+        "ca_title": "📉 Analyse d'Entreprise", "ca_desc": "Importez des modèles Excel, analysez les écarts et générez des teasers.",
+        "bb_title": "⚖️ Benchmark Sectoriel", "bb_desc": "Comparez les marges, la liquidité et le ROE avec les concurrents marocains.",
+        "ma_title": "💼 Salle des Marchés M&A", "ma_desc": "Exécutez des modèles LBO, le MEDAF et des simulations Monte Carlo.",
+        "lc_title": "💹 Graphiques en Direct", "lc_desc": "Suivez les tendances du marché, la volatilité et l'historique des prix.",
+        "mh_title": "🗄️ Mon Historique", "mh_desc": "Accédez, gérez et téléchargez vos sessions d'analyse précédentes.",
+        "ac_title": "👤 À propos du Créateur", "ac_desc": "Profil professionnel, parcours académique et liens de networking.",
+        "launch": "Lancer le Module",
+        # Docs Section
+        "doc_head": "📖 Méthodologie Financière et Spécifications",
+        "doc_wacc": "#### ⚙️ 1. Coût du Capital (CMPC & MEDAF)",
+        "doc_wacc_desc": "La plateforme calcule le coût des capitaux propres via le MEDAF. Pour les cibles marocaines, le taux sans risque est basé sur les bons du Trésor marocain à 10 ans. Le CMPC obtenu sert de taux d'actualisation.",
+        "doc_dcf": "#### 📊 2. Actualisation des Flux de Trésorerie (DCF)",
+        "doc_dcf_desc": "Le modèle DCF utilise une prévision explicite des FCF sur 5 ans. La valeur terminale est calculée via le modèle de Gordon Shapiro, supposant un taux de croissance perpétuelle.",
+        "doc_lbo": "#### 💰 3. LBO (Rachat par Effet de Levier)",
+        "doc_lbo_desc": "Le modèle LBO suppose un horizon de détention de 5 ans. Les valeurs d'entreprise d'entrée et de sortie dépendent des multiples d'EBITDA. Les rendements (TRI & MoIC) évaluent la création de valeur."
     },
     "Español": {
-        "banner_h": "🏗️ Benchmark del Sector BTP", "banner_p": "Compara tu empresa objetivo con sus pares de la Bolsa de Casablanca.",
-        "target_title": "🎯 Configurar Datos Objetivo", "proj_name": "Nombre del Proyecto", "nm": "Margen Neto (%)", "roe": "ROE (%)",
-        "gearing": "Gearing (Deuda/Capital %)", "pe": "Ratio P/E Implícito", "help_gearing": "El promedio de BTP es ~80%.",
-        "info_update": "💡 Los gráficos y tablas se actualizan automáticamente.", "data_title": "📊 Resumen de Datos del Mercado",
-        "p1_title": "⚖️ 1. Comparación: Rentabilidad y Retornos", "select_peers": "Selecciona competidores para comparar:",
-        "p2_title": "⚠️ 2. Matriz de Riesgo/Recompensa BTP", "p2_desc": "Compara Rentabilidad (ROE) vs Riesgo Financiero (Gearing).",
-        "p3_title": "🕸️ 3. Perfil Sectorial 360°", "p3_desc": "Gráfico de radar que compara tu objetivo con el promedio del mercado.",
-        "col_price": f"Precio ({sym})", "your_target": "Tu Objetivo", "market_peer": "Par del Mercado"
+        "login_title": "ACCESO AL SISTEMA", "email": "Correo Corporativo", "pass": "Contraseña", "auth": "Autenticar", "sys": "**Sistema**",
+        "welcome": "👋 Bienvenido de nuevo,", "settings": "⚙️ Ajustes y Perfil", "profile": "**Perfil de Usuario**", "pref": "**Preferencias**",
+        "curr_lbl": "Moneda predeterminada", "lang_lbl": "Idioma de la plataforma", "docs": "📖 Documentación", "logout": "🚪 Cerrar Sesión",
+        "cse": "Bolsa de Casablanca", "subtitle": "Centro de Análisis Financiero de Renta Variable BTP", "badge": "🇲🇦 Enfoque Mercado Marroquí",
+        "tracked": "Empresas Seguidas", "avg_pe": "P/E Promedio", "top_stock": "Acción Más Cara", "entities": "Entidades",
+        "nav": "🚀 Módulos de Navegación Rápida",
+        "ca_title": "📉 Análisis Corporativo", "ca_desc": "Sube modelos Excel, analiza variaciones y genera informes de inversión.",
+        "bb_title": "⚖️ Benchmark Sectorial", "bb_desc": "Compara márgenes, liquidez y ROE contra competidores marroquíes.",
+        "ma_title": "💼 Sala de Fusiones (M&A)", "ma_desc": "Ejecuta modelos LBO, CAPM y simulaciones Monte Carlo DCF.",
+        "lc_title": "💹 Gráficos en Vivo", "lc_desc": "Rastrea tendencias del mercado en tiempo real y datos históricos.",
+        "mh_title": "🗄️ Mi Historial", "mh_desc": "Accede, gestiona y descarga tus sesiones de análisis guardadas.",
+        "ac_title": "👤 Sobre el Creador", "ac_desc": "Perfil profesional, formación académica y enlaces de networking.",
+        "launch": "Iniciar Módulo",
+        # Docs Section
+        "doc_head": "📖 Metodología Financiera y Especificaciones",
+        "doc_wacc": "#### ⚙️ 1. Costo de Capital (WACC y CAPM)",
+        "doc_wacc_desc": "La plataforma calcula el Costo del Capital mediante el CAPM. Para objetivos marroquíes, la Tasa Libre de Riesgo se basa en los Bonos del Tesoro a 10 años. El WACC resultante se usa como tasa de descuento.",
+        "doc_dcf": "#### 📊 2. Flujo de Caja Descontado (DCF)",
+        "doc_dcf_desc": "El motor DCF proyecta flujos de caja libres a 5 años. El Valor Terminal se calcula con el Modelo de Crecimiento de Gordon, asumiendo una tasa de crecimiento perpetuo.",
+        "doc_lbo": "#### 💰 3. Compra Apalancada (LBO)",
+        "doc_lbo_desc": "El modelo LBO asume un horizonte de inversión de 5 años. Los Valores Empresariales de entrada y salida se basan en múltiplos de EBITDA."
     },
     "العربية": {
-        "banner_h": "🏗️ مقارنة أداء قطاع البناء", "banner_p": "قارن شركتك المستهدفة مع نظيراتها في بورصة الدار البيضاء.",
-        "target_title": "🎯 إعداد بيانات الشركة المستهدفة", "proj_name": "اسم المشروع", "nm": "هامش الربح الصافي (%)", "roe": "العائد على حقوق المساهمين (%)",
-        "gearing": "الرافعة المالية (الديون/حقوق الملكية %)", "pe": "مكرر الربحية الضمني", "help_gearing": "متوسط القطاع حوالي 80%.",
-        "info_update": "💡 يتم تحديث الرسوم البيانية والجداول تلقائيًا.", "data_title": "📊 نظرة عامة على بيانات السوق",
-        "p1_title": "⚖️ 1. مقارنة الأقران: الربحية والعوائد", "select_peers": "اختر المنافسين للمقارنة:",
-        "p2_title": "⚠️ 2. مصفوفة المخاطر والمكافآت", "p2_desc": "يقارن الربحية مقابل المخاطر المالية (الرافعة المالية).",
-        "p3_title": "🕸️ 3. ملف تعريف القطاع 360 درجة", "p3_desc": "رسم بياني راداري يقارن شركتك مع متوسط السوق.",
-        "col_price": f"السعر ({sym})", "your_target": "شركتك المستهدفة", "market_peer": "منافس في السوق"
+        "login_title": "تسجيل الدخول", "email": "البريد الإلكتروني للشركة", "pass": "كلمة المرور", "auth": "دخول", "sys": "**النظام**",
+        "welcome": "👋 مرحباً بعودتك،", "settings": "⚙️ الإعدادات والملف الشخصي", "profile": "**الملف الشخصي**", "pref": "**التفضيلات**",
+        "curr_lbl": "العملة الافتراضية", "lang_lbl": "لغة المنصة", "docs": "📖 وثائق المنصة", "logout": "🚪 تسجيل الخروج",
+        "cse": "بورصة الدار البيضاء", "subtitle": "منصة التحليل المالي وأبحاث أسهم قطاع البناء والأشغال العمومية", "badge": "🇲🇦 تركيز على السوق المغربي",
+        "tracked": "الشركات المتابعة", "avg_pe": "متوسط مكرر الربحية", "top_stock": "أغلى سهم", "entities": "شركات",
+        "nav": "🚀 وحدات التنقل السريع",
+        "ca_title": "📉 تحليل الشركات", "ca_desc": "رفع نماذج الإكسل، تحليل التغيرات، واستخراج تقارير الاستثمار.",
+        "bb_title": "⚖️ مقارنة القطاع", "bb_desc": "مقارنة هوامش التشغيل والسيولة والعائد على حقوق المساهمين مع المنافسين.",
+        "ma_title": "💼 غرفة صفقات الاندماج والاستحواذ", "ma_desc": "تنفيذ نماذج LBO السريعة، وCAPM المتقدمة، ومحاكاة مونت كارلو.",
+        "lc_title": "💹 رسوم بيانية حية", "lc_desc": "تتبع اتجاهات السوق في الوقت الفعلي والبيانات التاريخية للأسعار.",
+        "mh_title": "🗄️ السجل الخاص بي", "mh_desc": "الوصول وإدارة وتنزيل جلسات التحليل المحفوظة مسبقًا.",
+        "ac_title": "👤 عن المطور", "ac_desc": "الملف المهني والخلفية الأكاديمية وروابط التواصل.",
+        "launch": "تشغيل الوحدة",
+        # Docs Section
+        "doc_head": "📖 المنهجية المالية ومواصفات النظام",
+        "doc_wacc": "#### ⚙️ 1. تكلفة رأس المال (WACC و CAPM)",
+        "doc_wacc_desc": "تحسب المنصة تكلفة حقوق الملكية باستخدام نموذج (CAPM). بالنسبة للشركات المغربية، يُستند المعدل الخالي من المخاطر عادةً إلى سندات الخزينة المغربية لأجل 10 سنوات. يُستخدم WACC كنسبة خصم لتحديد القيمة الحالية.",
+        "doc_dcf": "#### 📊 2. خصم التدفقات النقدية (DCF)",
+        "doc_dcf_desc": "يستخدم محرك DCF توقعات التدفقات النقدية الحرة لمدة 5 سنوات. يتم حساب القيمة النهائية (Terminal Value) باستخدام نموذج جوردون للنمو، بافتراض معدل نمو دائم يتماشى مع التضخم طويل الأجل.",
+        "doc_lbo": "#### 💰 3. الاستحواذ المدعوم بالقروض (LBO)",
+        "doc_lbo_desc": "يفترض نموذج LBO فترة احتفاظ تبلغ 5 سنوات. يتم تحديد قيم الدخول والخروج للشركة بناءً على مضاعفات EBITDA. تقيس العوائد (IRR و MoIC) القيمة الناتجة بعد سداد الديون."
     }
 }
+lang = st.session_state.lang
 txt = t[lang]
 
-# --- UI STYLING & CSS HACKS ---
-rtl_css = ""
+# ==========================================
+# 2. SUPABASE SETUP
+# ==========================================
+try:
+    supabase = create_client(
+        supabase_url=st.secrets["SUPABASE_URL"],
+        supabase_key=st.secrets["SUPABASE_KEY"],
+        options=ClientOptions(postgrest_client_timeout=10)
+    )
+except Exception as e:
+    st.error(f"Database Connection Error: {e}")
+    st.stop()
+
+if "user" not in st.session_state: st.session_state.user = None
+
+# ==========================================
+# 3. MODALS & UI COMPONENTS
+# ==========================================
+
+@st.dialog(txt["doc_head"], width="large")
+def show_docs_modal():
+    st.markdown(txt["doc_wacc"])
+    st.write(txt["doc_wacc_desc"])
+    st.latex(r"K_e = R_f + \beta \times (R_m - R_f)")
+    
+    st.markdown("---")
+    st.markdown(txt["doc_dcf"])
+    st.write(txt["doc_dcf_desc"])
+    st.latex(r"TV = \frac{FCF_5 \times (1 + g)}{WACC - g}")
+    
+    st.markdown("---")
+    st.markdown(txt["doc_lbo"])
+    st.write(txt["doc_lbo_desc"])
+    st.latex(r"MoIC = \frac{\text{Exit Equity}}{\text{Entry Equity}}")
+
+# Explicitly protect the sidebar and header from RTL flipping
 if lang == "العربية":
     rtl_css = """
     .block-container { direction: rtl; text-align: right; }
     [data-testid="stSidebar"], [data-testid="stSidebarNav"], [data-testid="collapsedControl"], [data-testid="stHeader"] { direction: ltr !important; text-align: left !important; }
     """
+else:
+    rtl_css = ""
 
 st.markdown(f"""
 <style>
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
-    .banner {{ background: linear-gradient(90deg, #0e1621 0%, #1f77b4 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #2ca02c; }}
-    .banner h1 {{ color: white; margin: 0; font-size: 2rem; }}
-    .banner p {{ color: #e0e0e0; margin: 0; font-size: 1rem; }}
+    
+    .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2rem; border-radius: 10px; border-left: 5px solid #c1272d; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
+    .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(193,39,45,0.2) 100%); }}
+    .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
+    .moroccan-badge {{ display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }}
+    
+    .overview-container {{ display: flex; justify-content: space-around; background-color: #161a22; padding: 20px; border-radius: 8px; border-top: 3px solid #333; margin-bottom: 30px;}}
+    .overview-item {{ text-align: center; }}
+    .overview-label {{ margin: 0; color: #b3b3b3; font-size: 14px; margin-bottom: 5px; }}
+    .overview-value {{ margin: 0; color: white; font-size: 24px; font-weight: bold; }}
+    
     {rtl_css}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f"""
-<div class="banner" {'dir="rtl"' if lang=="العربية" else ''}>
-    <h1>{txt['banner_h']}</h1>
-    <p>{txt['banner_p']}</p>
-</div>
-""", unsafe_allow_html=True)
+if st.session_state.user is None:
+    st.markdown("<style>[data-testid='stSidebar'] { display: none !important; } [data-testid='collapsedControl'] { display: none !important; }</style>", unsafe_allow_html=True)
 
-# --- FETCH MARKET DATA & APPLY CURRENCY ---
 @st.cache_data(ttl=60)
-def get_live_market_data():
+def get_dashboard_data():
     try:
         df = pd.read_csv("btp_market_data.csv")
-        df["Price_MAD"] = pd.to_numeric(df["Price_MAD"], errors='coerce')
         df["PE_Ratio"] = pd.to_numeric(df["PE_Ratio"], errors='coerce')
-        np.random.seed(42)
-        df["Net_Margin_%"] = np.random.uniform(5, 18, len(df)).round(2)
-        df["ROE_%"] = np.random.uniform(10, 25, len(df)).round(2)
-        df["Gearing_%"] = np.random.uniform(30, 150, len(df)).round(2) 
+        df["Price_MAD"] = pd.to_numeric(df["Price_MAD"], errors='coerce')
         return df
-    except Exception: 
-        data = {
-            "Company": ["TGCC", "LafargeHolcim", "Addoha", "Alliances", "Sonasid", "Ciments du Maroc"],
-            "Price_MAD": [300, 1800, 25, 120, 700, 1500],
-            "PE_Ratio": [15, 18, 12, 10, 14, 16],
-            "Net_Margin_%": [12.5, 16.0, 8.5, 9.0, 6.5, 15.2],
-            "ROE_%": [18.5, 22.0, 14.0, 15.5, 10.0, 20.1],
-            "Gearing_%": [85.0, 45.0, 120.0, 135.0, 30.0, 40.0]
-        }
-        return pd.DataFrame(data)
+    except Exception: return None
 
-df_live = get_live_market_data().copy()
-df_live["Type"] = txt["market_peer"]
-
-# Apply currency rate
-df_live["Price_Converted"] = df_live["Price_MAD"] * rate
-
-# --- TARGET INPUTS IN MAIN PAGE ---
-st.markdown(f"### {txt['target_title']}")
-with st.container(border=True):
-    col_in1, col_in2, col_in3 = st.columns(3)
-    with col_in1:
-        target_name = st.text_input(txt["proj_name"], "Project Alpha")
-    with col_in2:
-        target_margin = st.number_input(txt["nm"], value=14.0, step=0.5)
-    with col_in3:
-        target_roe = st.number_input(txt["roe"], value=20.0, step=0.5)
+# ==========================================
+# 4. ROUTING & UI
+# ==========================================
+if st.session_state.user is None:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    col_info, col_auth = st.columns([1.5, 1], gap="large")
+    
+    with col_info:
+        st.image("https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2070&auto=format&fit=crop", use_container_width=True)
+        st.markdown(f"## 📊 {txt['cse']}")
+        st.markdown(f"<p style='color: #b3b3b3; font-size: 1.1rem;'>{txt['subtitle']}</p>", unsafe_allow_html=True)
         
-    col_in4, col_in5, col_in6 = st.columns(3)
-    with col_in4:
-        target_gearing = st.number_input(txt["gearing"], value=60.0, step=5.0, help=txt["help_gearing"])
-    with col_in5:
-        target_pe = st.number_input(txt["pe"], value=13.0, step=0.5)
-    with col_in6:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.info(txt["info_update"])
+    with col_auth:
+        with st.container(border=True):
+            st.markdown(f"<h3 style='text-align: center; color: white; margin-top: 5px; margin-bottom: 0;'>{txt['login_title']}</h3>", unsafe_allow_html=True)
+            st.markdown("<hr style='border: 1px solid #c1272d; margin-top: 10px; margin-bottom: 20px; width: 50%; margin-left: auto; margin-right: auto;'>", unsafe_allow_html=True)
+            
+            choice = st.radio("Action", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed")
+            email = st.text_input(txt['email'], placeholder="email@domain.com")
+            password = st.text_input(txt['pass'], type="password")
 
-# Append Target to Dataframe
-target_row = pd.DataFrame([{
-    "Company": target_name, "Price_Converted": 0, "PE_Ratio": target_pe, 
-    "Net_Margin_%": target_margin, "ROE_%": target_roe, 
-    "Gearing_%": target_gearing, "Type": txt["your_target"]
-}])
-df_combined = pd.concat([target_row, df_live], ignore_index=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button(txt['auth'], use_container_width=True, type="primary"):
+                if choice == "Login":
+                    try:
+                        res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                        st.session_state.user = res.user
+                        st.rerun()
+                    except Exception: st.error("Login Error: Invalid credentials or user not found.")
+                else:
+                    try:
+                        supabase.auth.sign_up({"email": email, "password": password})
+                        st.success("Account created successfully! Switch to Login.")
+                    except Exception as e: st.error(f"Sign Up Error: {str(e)}")
 
-st.markdown("<br>", unsafe_allow_html=True)
+else:
+    # --- HEADER & SETTINGS ---
+    top_col1, top_col2 = st.columns([4, 1])
+    with top_col1:
+        user_name = st.session_state.user.email.split('@')[0].capitalize()
+        st.markdown(f"<h4 style='color: #e0e0e0; margin-top: 10px;'>{txt['welcome']} {user_name}</h4>", unsafe_allow_html=True)
+    
+    with top_col2:
+        with st.popover(txt['settings'], use_container_width=True):
+            st.markdown(txt['profile'])
+            st.write(f"📧 {st.session_state.user.email}")
+            st.divider()
+            
+            st.markdown(txt['pref'])
+            langs = ["English", "Français", "Español", "العربية"]
+            currs = ["MAD", "USD", "EUR"]
+            
+            new_lang = st.selectbox(txt['lang_lbl'], langs, index=langs.index(st.session_state.lang))
+            new_curr = st.selectbox(txt['curr_lbl'], currs, index=currs.index(st.session_state.currency))
+            
+            if new_lang != st.session_state.lang or new_curr != st.session_state.currency:
+                st.session_state.lang = new_lang
+                st.session_state.currency = new_curr
+                st.rerun()
+                
+            st.divider()
+            st.markdown(txt['sys'])
+            
+            # TRIGGER MODAL INSTEAD OF COMING SOON
+            if st.button(txt['docs'], use_container_width=True): 
+                show_docs_modal()
+                
+            if st.button(txt['logout'], type="primary", use_container_width=True):
+                supabase.auth.sign_out()
+                st.session_state.user = None
+                st.rerun()
+                
+    st.markdown("<br>", unsafe_allow_html=True)
 
-# --- RAW DATA TABLE ---
-st.subheader(txt["data_title"])
-
-def highlight_target(row):
-    if row['Type'] == txt["your_target"]: return ['background-color: rgba(245, 176, 65, 0.15)'] * len(row)
-    return [''] * len(row)
-
-# Format the dataframe columns for display
-display_table = df_combined[["Company", "Type", "Price_Converted", "PE_Ratio", "Net_Margin_%", "ROE_%", "Gearing_%"]].rename(
-    columns={"Price_Converted": txt["col_price"]}
-)
-
-st.dataframe(
-    display_table.style.apply(highlight_target, axis=1).format({
-        txt["col_price"]: "{:,.2f}",
-        "PE_Ratio": "{:.2f}x",
-        "Net_Margin_%": "{:.2f}%",
-        "ROE_%": "{:.2f}%",
-        "Gearing_%": "{:.2f}%"
-    }),
-    use_container_width=True,
-    hide_index=True
-)
-
-st.markdown("---")
-
-# --- THE UI (CHARTS) ---
-st.subheader(txt["p1_title"])
-peers = st.multiselect(txt["select_peers"], df_live["Company"].tolist(), default=df_live["Company"].tolist()[:4])
-
-if peers:
-    display_df = df_combined[(df_combined["Company"].isin(peers)) | (df_combined["Company"] == target_name)].copy()
-    color_map = {target_name: "#f5b041"}
-    for peer in peers: color_map[peer] = "#1f77b4"
-
-    col_bar1, col_bar2 = st.columns(2)
-    with col_bar1:
-        fig_margin = px.bar(display_df, x="Company", y="Net_Margin_%", color="Company", color_discrete_map=color_map, title=txt["nm"])
-        fig_margin.update_layout(template="plotly_dark", showlegend=False, margin=dict(l=20, r=20, t=40, b=20))
-        st.plotly_chart(fig_margin, use_container_width=True)
+    # --- BANNER ---
+    st.markdown(f"""
+    <div class="full-width-banner">
+        <div class="banner-overlay"></div>
+        <div class="banner-content" {'dir="rtl"' if lang=="العربية" else ''}>
+            <h1 style="color: white; margin: 0; font-size: 2.8rem; letter-spacing: 1px;">{txt['cse']}</h1>
+            <p style="color:#e0e0e0; font-size:1.3rem; margin: 5px 0 0 0;">{txt['subtitle']}</p>
+            <div class="moroccan-badge">{txt['badge']}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    df_dash = get_dashboard_data()
+    if df_dash is not None:
+        avg_pe = df_dash["PE_Ratio"].mean()
+        tracked_count = len(df_dash)
         
-    with col_bar2:
-        fig_roe = px.bar(display_df, x="Company", y="ROE_%", color="Company", color_discrete_map=color_map, title=txt["roe"])
-        fig_roe.update_layout(template="plotly_dark", showlegend=False, margin=dict(l=20, r=20, t=40, b=20))
-        st.plotly_chart(fig_roe, use_container_width=True)
-
-st.markdown("---")
-
-# --- BTP RISK MATRIX & SPIDER WEB ---
-col_matrix, col_radar = st.columns([1.2, 1], gap="large")
-
-with col_matrix:
-    st.subheader(txt["p2_title"])
-    st.markdown(f"<p style='color:#b3b3b3; font-size:0.9rem;'>{txt['p2_desc']}</p>", unsafe_allow_html=True)
+        # APPLY CURRENCY CONVERSION TO HOME PAGE
+        rate = st.session_state.rates[st.session_state.currency]
+        symbol = st.session_state.sym[st.session_state.currency]
+        
+        top_stock_row = df_dash.loc[df_dash["Price_MAD"].idxmax()]
+        top_stock_name = top_stock_row["Company"]
+        top_stock_val = top_stock_row["Price_MAD"] * rate
+        
+        st.markdown(f"""
+        <div class="overview-container" {'dir="rtl"' if lang=="العربية" else ''}>
+            <div class="overview-item">
+                <p class="overview-label">{txt['tracked']}</p>
+                <p class="overview-value">{tracked_count} {txt['entities']}</p>
+            </div>
+            <div class="overview-item">
+                <p class="overview-label">{txt['avg_pe']}</p>
+                <p class="overview-value">{avg_pe:.1f}x</p>
+            </div>
+            <div class="overview-item">
+                <p class="overview-label">{txt['top_stock']}</p>
+                <p class="overview-value">{top_stock_name} <span style="font-size:16px; color:#2ca02c;">({top_stock_val:,.2f} {symbol})</span></p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    fig_scatter = px.scatter(
-        df_combined, x="Gearing_%", y="ROE_%", color="Type", text="Company", size_max=60,
-        color_discrete_map={txt["your_target"]: "#f5b041", txt["market_peer"]: "#1f77b4"}
-    )
-    fig_scatter.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')))
+    st.markdown(f"### {txt['nav']}")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    avg_gearing = df_live["Gearing_%"].mean()
-    avg_roe = df_live["ROE_%"].mean()
-    fig_scatter.add_hline(y=avg_roe, line_dash="dash", line_color="gray", annotation_text="Avg ROE")
-    fig_scatter.add_vline(x=avg_gearing, line_dash="dash", line_color="gray", annotation_text="Avg Debt")
+    # ROW 1
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        with st.container(border=True):
+            st.markdown(f"<h4 style='color:#1f77b4; margin-top:0;'>{txt['ca_title']}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['ca_desc']}</p>", unsafe_allow_html=True)
+            if st.button(txt['launch'], key="b1", use_container_width=True): st.switch_page("pages/1_Corporate_Analysis.py")
+    with c2:
+        with st.container(border=True):
+            st.markdown(f"<h4 style='color:#2ca02c; margin-top:0;'>{txt['bb_title']}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['bb_desc']}</p>", unsafe_allow_html=True)
+            if st.button(txt['launch'], key="b2", use_container_width=True): st.switch_page("pages/2_BTP_Benchmark.py")
+    with c3:
+        with st.container(border=True):
+            st.markdown(f"<h4 style='color:#9467bd; margin-top:0;'>{txt['ma_title']}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['ma_desc']}</p>", unsafe_allow_html=True)
+            if st.button(txt['launch'], key="b3", use_container_width=True): st.switch_page("pages/3_MA_Valuation.py")
     
-    fig_scatter.update_layout(template="plotly_dark", xaxis_title=txt["gearing"], yaxis_title=txt["roe"], height=450)
-    st.plotly_chart(fig_scatter, use_container_width=True)
-
-with col_radar:
-    st.subheader(txt["p3_title"])
-    st.markdown(f"<p style='color:#b3b3b3; font-size:0.9rem;'>{txt['p3_desc']}</p>", unsafe_allow_html=True)
-    
-    categories = ['Net Margin', 'ROE', 'P/E Ratio', 'Financial Health']
-    
-    target_health = max(0, 150 - target_gearing) 
-    market_health = max(0, 150 - df_live["Gearing_%"].mean())
-    
-    target_vals = [target_margin, target_roe, target_pe, target_health]
-    market_vals = [df_live["Net_Margin_%"].mean(), df_live["ROE_%"].mean(), df_live["PE_Ratio"].mean(), market_health]
-    
-    fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(r=target_vals, theta=categories, fill='toself', name=txt["your_target"], line_color='#f5b041'))
-    fig_radar.add_trace(go.Scatterpolar(r=market_vals, theta=categories, fill='toself', name=txt["market_peer"], line_color='#1f77b4'))
-    
-    fig_radar.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, max(max(target_vals), max(market_vals)) + 5])),
-        showlegend=True, template="plotly_dark", height=450, legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
-    )
-    st.plotly_chart(fig_radar, use_container_width=True)
+    # ROW 2
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        with st.container(border=True):
+            st.markdown(f"<h4 style='color:#d62728; margin-top:0;'>{txt['lc_title']}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['lc_desc']}</p>", unsafe_allow_html=True)
+            if st.button(txt['launch'], key="b4", use_container_width=True): st.switch_page("pages/4_Live_Charts.py")
+    with c5:
+        with st.container(border=True):
+            st.markdown(f"<h4 style='color:#ff7f0e; margin-top:0;'>{txt['mh_title']}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['mh_desc']}</p>", unsafe_allow_html=True)
+            if st.button(txt['launch'], key="b5", use_container_width=True): st.switch_page("pages/6_My_History.py")
+    with c6:
+        with st.container(border=True):
+            st.markdown(f"<h4 style='color:#17becf; margin-top:0;'>{txt['ac_title']}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['ac_desc']}</p>", unsafe_allow_html=True)
+            if st.button(txt['launch'], key="b6", use_container_width=True): st.switch_page("pages/5_About_Creator.py")
