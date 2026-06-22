@@ -23,7 +23,8 @@ sym = syms[curr]
 # --- TRANSLATION DICTIONARY ---
 t = {
     "English": {
-        "title": "📈 Corporate Analysis", "upload": "Upload your company's financial Excel template.", "dl_temp": "📥 Download Template",
+        "title": "📈 Corporate Analysis", "banner_desc": "Upload financial models, run variance analysis, and generate expert diagnostics.",
+        "upload": "Upload your company's financial Excel template.", "dl_temp": "📥 Download Template",
         "var_title": "📋 Variance Analysis", "sens_title": "🎛️ Sensitivity (What-If)", 
         "rev_growth": "Revenue Growth (%)", "cost_red": "Cost Reduction (%)",
         "sim_rev": "Simulated Revenue", "sim_margin": "Simulated Net Margin",
@@ -41,7 +42,8 @@ t = {
         "pdf_s4": "4. Expert Diagnosis & Recommendations", "pdf_foot": "Strictly Confidential | M&A Advisory Desk - Z.ELAIDI Financial Hub"
     },
     "Français": {
-        "title": "📈 Analyse d'Entreprise", "upload": "Importez le modèle financier Excel de votre entreprise.", "dl_temp": "📥 Télécharger le Modèle",
+        "title": "📈 Analyse d'Entreprise", "banner_desc": "Importez des modèles financiers, analysez les écarts et générez des diagnostics.",
+        "upload": "Importez le modèle financier Excel de votre entreprise.", "dl_temp": "📥 Télécharger le Modèle",
         "var_title": "📋 Analyse des Écarts", "sens_title": "🎛️ Sensibilité (Simulations)", 
         "rev_growth": "Croissance des Revenus (%)", "cost_red": "Réduction des Coûts (%)",
         "sim_rev": "Revenus Simulés", "sim_margin": "Marge Nette Simulée",
@@ -59,7 +61,8 @@ t = {
         "pdf_s4": "4. Diagnostic d'Expert et Recommandations", "pdf_foot": "Strictement Confidentiel | Bureau de Conseil M&A - Z.ELAIDI Financial Hub"
     },
     "Español": {
-        "title": "📈 Análisis Corporativo", "upload": "Sube la plantilla financiera en Excel de tu empresa.", "dl_temp": "📥 Descargar Plantilla",
+        "title": "📈 Análisis Corporativo", "banner_desc": "Sube modelos financieros, analiza variaciones y genera diagnósticos de expertos.",
+        "upload": "Sube la plantilla financiera en Excel de tu empresa.", "dl_temp": "📥 Descargar Plantilla",
         "var_title": "📋 Análisis de Variaciones", "sens_title": "🎛️ Sensibilidad (Escenarios)", 
         "rev_growth": "Crecimiento de Ingresos (%)", "cost_red": "Reducción de Costes (%)",
         "sim_rev": "Ingresos Simulados", "sim_margin": "Margen Neto Simulado",
@@ -77,7 +80,8 @@ t = {
         "pdf_s4": "4. Diagnóstico de Expertos y Recomendaciones", "pdf_foot": "Estrictamente Confidencial | Asesoría M&A - Z.ELAIDI Financial Hub"
     },
     "العربية": {
-        "title": "📈 تحليل الشركات", "upload": "قم برفع نموذج الإكسل المالي لشركتك.", "dl_temp": "📥 تنزيل النموذج",
+        "title": "📈 تحليل الشركات", "banner_desc": "رفع النماذج المالية، تحليل التغيرات، واستخراج تشخيصات الخبراء.",
+        "upload": "قم برفع نموذج الإكسل المالي لشركتك.", "dl_temp": "📥 تنزيل النموذج",
         "var_title": "📋 تحليل التغيرات", "sens_title": "🎛️ تحليل الحساسية (محاكاة)", 
         "rev_growth": "نمو الإيرادات (%)", "cost_red": "تخفيض التكاليف (%)",
         "sim_rev": "الإيرادات المحاكية", "sim_margin": "هامش الربح الصافي المحاكى",
@@ -111,6 +115,12 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     .metric-box {{ background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }}
     .report-box {{ padding: 20px; border-radius: 10px; background-color: #161a22; border-left: 5px solid; margin-top: 20px; }}
+    
+    /* Corporate Banner Styling (Blue Theme) */
+    .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #1f77b4; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
+    .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(31,119,180,0.3) 100%); }}
+    .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
+    
     {rtl_css}
     
     /* =========================================
@@ -127,7 +137,16 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-st.title(txt["title"])
+# --- BANNER (Replaces st.title) ---
+st.markdown(f"""
+<div class="full-width-banner">
+    <div class="banner-overlay"></div>
+    <div class="banner-content" {'dir="rtl"' if lang=="العربية" else ''}>
+        <h1 style="color: white; margin: 0; font-size: 2.5rem; letter-spacing: 1px;">{txt['title']}</h1>
+        <p style="color:#e0e0e0; font-size:1.1rem; margin-top: 8px;">{txt['banner_desc']}</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- SUPABASE INIT ---
 try:
