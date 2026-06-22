@@ -97,9 +97,16 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- HYBRID LIVE MARKET DATA ENGINE (WITH MULTITHREADING FOR SPEED) ---
-@st.cache_data(ttl=900) 
-def get_live_market_data():
+# --- MANUAL CACHE CLEAR BUTTON ---
+col_clear1, col_clear2 = st.columns([4, 1])
+with col_clear2:
+    if st.button("🔄 Force Data Refresh", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+# --- HYBRID LIVE MARKET DATA ENGINE V2 (RENAMED TO BUST CACHE) ---
+@st.cache_data(ttl=300, show_spinner=False) # Changed TTL to 5 mins and renamed func
+def fetch_live_market_data_v2():
     targets = {
         "LafargeHolcim": {"yf": "LHM.CM", "gf": "LHM:CMA"},
         "Addoha": {"yf": "ADH.CM", "gf": "ADH:CMA"},
@@ -112,37 +119,47 @@ def get_live_market_data():
     }
     
     stealth_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9,fr;q=0.8"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept-Language": "en-US,en;q=0.9"
     }
 
-    # Worker function to fetch a single company's price FAST
     def fetch_price(name, tkrs):
-        # Try GF first (Best for Morocco) with a strict 2-second timeout
+        # 1. Try Google Finance Proxy First (Most reliable bypass)
         try:
-            url = f"https://www.google.com/finance/quote/{tkrs['gf']}"
-            res = requests.get(url, headers=stealth_headers, timeout=2.0) 
+            # ?hl=en forces English number formatting so 1,800.50 can be easily parsed to 1800.50
+            proxy_url = f"https://api.allorigins.win/raw?url=https://www.google.com/finance/quote/{tkrs['gf']}?hl=en"
+            res = requests.get(proxy_url, timeout=5)
             if res.status_code == 200:
                 soup = BeautifulSoup(res.text, 'html.parser')
                 price_div = soup.find("div", class_="YMlKec fxKbKc")
                 if price_div:
                     clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
-                    return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (GF)"}
-        except:
-            pass
-            
-        # If GF fails, try YF (also with strict rules)
+                    return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (GF-Proxy)"}
+        except: pass
+
+        # 2. Try Yahoo Finance
         try:
             stock = yf.Ticker(tkrs["yf"])
             hist = stock.history(period="1d")
             if not hist.empty:
                 return {"Company": name, "Price_MAD": float(hist['Close'].iloc[-1]), "Data_Status": "🟢 LIVE (YF)"}
-        except:
-            pass
-            
+        except: pass
+        
+        # 3. Try Google Finance Direct (Might get blocked by Captcha)
+        try:
+            url = f"https://www.google.com/finance/quote/{tkrs['gf']}?hl=en"
+            res = requests.get(url, headers=stealth_headers, timeout=3)
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                price_div = soup.find("div", class_="YMlKec fxKbKc")
+                if price_div:
+                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
+                    return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (GF-Direct)"}
+        except: pass
+
         return {"Company": name, "Price_MAD": None, "Data_Status": "🔴 Fallback"}
 
-    # MULTITHREADING: Fetch all 8 companies at the exact same time!
+    # Run simultaneously
     data_list = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(fetch_price, name, tkrs) for name, tkrs in targets.items()]
@@ -151,16 +168,16 @@ def get_live_market_data():
             
     df_live = pd.DataFrame(data_list)
     
-    # Fundamental Constants (Fallbacks & Ratios)
+    # Fundamental Constants (Updated closer to recent reality just in case)
     fallbacks = {
-        "LafargeHolcim": {"Price_MAD": 1800, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0},
-        "Addoha": {"Price_MAD": 25, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0},
-        "Alliances": {"Price_MAD": 120, "PE_Ratio": 10.5, "Net_Margin_%": 9.0, "ROE_%": 15.5, "Gearing_%": 135.0},
-        "Ciments du Maroc": {"Price_MAD": 1500, "PE_Ratio": 16.8, "Net_Margin_%": 15.2, "ROE_%": 20.1, "Gearing_%": 40.0},
-        "TGCC": {"Price_MAD": 300, "PE_Ratio": 15.0, "Net_Margin_%": 12.5, "ROE_%": 18.5, "Gearing_%": 85.0},
-        "Sonasid": {"Price_MAD": 850, "PE_Ratio": 14.5, "Net_Margin_%": 5.2, "ROE_%": 8.5, "Gearing_%": 20.0},
-        "Jet Contractors": {"Price_MAD": 350, "PE_Ratio": 18.0, "Net_Margin_%": 6.0, "ROE_%": 12.0, "Gearing_%": 110.0},
-        "Colorado": {"Price_MAD": 55, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0}
+        "LafargeHolcim": {"Price_MAD": 1780, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0},
+        "Addoha": {"Price_MAD": 33, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0},
+        "Alliances": {"Price_MAD": 260, "PE_Ratio": 10.5, "Net_Margin_%": 9.0, "ROE_%": 15.5, "Gearing_%": 135.0},
+        "Ciments du Maroc": {"Price_MAD": 1750, "PE_Ratio": 16.8, "Net_Margin_%": 15.2, "ROE_%": 20.1, "Gearing_%": 40.0},
+        "TGCC": {"Price_MAD": 330, "PE_Ratio": 15.0, "Net_Margin_%": 12.5, "ROE_%": 18.5, "Gearing_%": 85.0},
+        "Sonasid": {"Price_MAD": 870, "PE_Ratio": 14.5, "Net_Margin_%": 5.2, "ROE_%": 8.5, "Gearing_%": 20.0},
+        "Jet Contractors": {"Price_MAD": 500, "PE_Ratio": 18.0, "Net_Margin_%": 6.0, "ROE_%": 12.0, "Gearing_%": 110.0},
+        "Colorado": {"Price_MAD": 53, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0}
     }
     
     final_data = []
@@ -187,8 +204,8 @@ def get_live_market_data():
         
     return pd.DataFrame(final_data)
 
-with st.spinner("🔄 Booting Hybrid Live Engine (Fetching Data in Parallel)..."):
-    df_live = get_live_market_data().copy()
+with st.spinner("🔄 Scraping Real-Time Market Data..."):
+    df_live = fetch_live_market_data_v2().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
     df_live["Price_Converted"] = df_live["Price_MAD"] * rate
