@@ -6,6 +6,7 @@ import numpy as np
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
+import concurrent.futures
 
 # --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
@@ -96,8 +97,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- HYBRID LIVE MARKET DATA ENGINE ---
-@st.cache_data(ttl=900) # Cache for 15 mins
+# --- HYBRID LIVE MARKET DATA ENGINE (WITH MULTITHREADING FOR SPEED) ---
+@st.cache_data(ttl=900) 
 def get_live_market_data():
     targets = {
         "LafargeHolcim": {"yf": "LHM.CM", "gf": "LHM:CMA"},
@@ -110,45 +111,44 @@ def get_live_market_data():
         "Colorado": {"yf": "COL.CM", "gf": "COL:CMA"}
     }
     
-    # Modern User-Agent to prevent bot blocking
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'}
-    data_list = []
-    
-    for name, tkrs in targets.items():
-        live_price = None
-        source = "🔴 Fallback"
-        
-        # 1. Try Yahoo Finance First
+    stealth_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9,fr;q=0.8"
+    }
+
+    # Worker function to fetch a single company's price FAST
+    def fetch_price(name, tkrs):
+        # Try GF first (Best for Morocco) with a strict 2-second timeout
+        try:
+            url = f"https://www.google.com/finance/quote/{tkrs['gf']}"
+            res = requests.get(url, headers=stealth_headers, timeout=2.0) 
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                price_div = soup.find("div", class_="YMlKec fxKbKc")
+                if price_div:
+                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
+                    return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (GF)"}
+        except:
+            pass
+            
+        # If GF fails, try YF (also with strict rules)
         try:
             stock = yf.Ticker(tkrs["yf"])
             hist = stock.history(period="1d")
             if not hist.empty:
-                live_price = float(hist['Close'].iloc[-1])
-                source = "🟢 LIVE (YF)"
+                return {"Company": name, "Price_MAD": float(hist['Close'].iloc[-1]), "Data_Status": "🟢 LIVE (YF)"}
         except:
             pass
             
-        # 2. Try Google Finance Web Scraper if YF fails
-        if live_price is None:
-            try:
-                url = f"https://www.google.com/finance/quote/{tkrs['gf']}"
-                res = requests.get(url, headers=headers, timeout=5)
-                if res.status_code == 200:
-                    soup = BeautifulSoup(res.text, 'html.parser')
-                    price_div = soup.find("div", class_="YMlKec fxKbKc")
-                    if price_div:
-                        clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
-                        live_price = float(clean_price)
-                        source = "🟢 LIVE (GF)"
-            except:
-                pass
-                
-        data_list.append({
-            "Company": name,
-            "Price_MAD": live_price,
-            "Data_Status": source
-        })
-        
+        return {"Company": name, "Price_MAD": None, "Data_Status": "🔴 Fallback"}
+
+    # MULTITHREADING: Fetch all 8 companies at the exact same time!
+    data_list = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(fetch_price, name, tkrs) for name, tkrs in targets.items()]
+        for future in concurrent.futures.as_completed(futures):
+            data_list.append(future.result())
+            
     df_live = pd.DataFrame(data_list)
     
     # Fundamental Constants (Fallbacks & Ratios)
@@ -187,7 +187,7 @@ def get_live_market_data():
         
     return pd.DataFrame(final_data)
 
-with st.spinner("🔄 Booting Hybrid Live Engine (Connecting to Markets)..."):
+with st.spinner("🔄 Booting Hybrid Live Engine (Fetching Data in Parallel)..."):
     df_live = get_live_market_data().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
