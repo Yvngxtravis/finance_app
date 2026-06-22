@@ -99,13 +99,13 @@ st.markdown(f"""
 # --- FETCH LIVE MARKET DATA (YFINANCE + FALLBACK) ---
 @st.cache_data(ttl=3600) # Cache for 1 hour to prevent API limits
 def get_live_market_data():
-    # Added Sonasid, Jet Contractors, and Colorado
-tickers = {
+    # TGCC has been added here to be fully live.
+    tickers = {
         "LafargeHolcim": "LHM.CM", 
         "Addoha": "ADH.CM", 
         "Alliances": "ADI.CM", 
         "Ciments du Maroc": "CMA.CM",
-        "TGCC": "TGC.CM",           # <--- هاني زدت الرمز ديال TGCC باش يولي الثمن ديالها لايڤ
+        "TGCC": "TGC.CM",
         "Sonasid": "SND.CM",
         "Jet Contractors": "JET.CM",
         "Colorado": "COL.CM"
@@ -129,7 +129,7 @@ tickers = {
             })
             
     except Exception as e:
-        st.toast(f"⚠️ Live feed unavailable, using cached models. Error: {str(e)}")
+        pass
         
     df_live = pd.DataFrame(data_list)
     
@@ -257,7 +257,7 @@ with col_matrix:
     
     fig_scatter = px.scatter(
         df_combined, x="Gearing_%", y="ROE_%", color="Type", text="Company", size_max=60,
-        color_discrete_map={txt["your_target"]: "#f5b041", txt["market_peer"]: "#2ca02c"} # Updated peer color to green
+        color_discrete_map={txt["your_target"]: "#f5b041", txt["market_peer"]: "#2ca02c"} 
     )
     fig_scatter.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')))
     
@@ -283,7 +283,7 @@ with col_radar:
     
     fig_radar = go.Figure()
     fig_radar.add_trace(go.Scatterpolar(r=target_vals, theta=categories, fill='toself', name=txt["your_target"], line_color='#f5b041'))
-    fig_radar.add_trace(go.Scatterpolar(r=market_vals, theta=categories, fill='toself', name=txt["market_peer"], line_color='#2ca02c')) # Updated peer color to green
+    fig_radar.add_trace(go.Scatterpolar(r=market_vals, theta=categories, fill='toself', name=txt["market_peer"], line_color='#2ca02c')) 
     
     fig_radar.update_layout(
         polar=dict(radialaxis=dict(visible=True, range=[0, max(max(target_vals), max(market_vals)) + 5])),
