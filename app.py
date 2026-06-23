@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import json
+import plotly.express as px
+from datetime import datetime
 from supabase import create_client, ClientOptions
 
 # MUST BE THE FIRST LINE
@@ -37,6 +39,9 @@ t = {
         "launch": "Launch Module",
         "recent_act": "⏱️ Recent Sessions", "view_hist": "View Full History", "no_recent": "No recent sessions found.",
         "guest_btn": "🚀 Continue as Guest",
+        "macro_title": "🌍 Global Macro Indicators", "masi": "MASI (Morocco)", "sp500": "S&P 500 (US)", "cac40": "CAC 40 (France)",
+        "chart_title": "📊 Live Market Prices Overview", "quote_title": "💡 Daily Financial Insight",
+        "cta_title": "Looking for a top-tier Financial Analyst?", "cta_desc": "Let's build the future of M&A and Private Equity together.", "cta_btn": "📩 Connect on LinkedIn",
         # Docs Section
         "doc_head": "📖 Financial Methodology & Engine Specs",
         "doc_wacc": "#### ⚙️ 1. Cost of Capital (WACC & CAPM)",
@@ -62,6 +67,9 @@ t = {
         "launch": "Lancer le Module",
         "recent_act": "⏱️ Sessions Récentes", "view_hist": "Voir l'historique complet", "no_recent": "Aucune session récente trouvée.",
         "guest_btn": "🚀 Continuer en tant qu'invité",
+        "macro_title": "🌍 Indicateurs Macro Globaux", "masi": "MASI (Maroc)", "sp500": "S&P 500 (US)", "cac40": "CAC 40 (France)",
+        "chart_title": "📊 Aperçu des Prix du Marché", "quote_title": "💡 Perspective Financière du Jour",
+        "cta_title": "À la recherche d'un Analyste Financier de haut niveau ?", "cta_desc": "Construisons ensemble l'avenir du M&A et du Private Equity.", "cta_btn": "📩 Me contacter sur LinkedIn",
         # Docs Section
         "doc_head": "📖 Méthodologie Financière et Spécifications",
         "doc_wacc": "#### ⚙️ 1. Coût du Capital (CMPC & MEDAF)",
@@ -87,6 +95,9 @@ t = {
         "launch": "Iniciar Módulo",
         "recent_act": "⏱️ Sesiones Recientes", "view_hist": "Ver historial completo", "no_recent": "No se encontraron sesiones recientes.",
         "guest_btn": "🚀 Continuar como Invitado",
+        "macro_title": "🌍 Indicadores Macro Globales", "masi": "MASI (Marruecos)", "sp500": "S&P 500 (EE.UU.)", "cac40": "CAC 40 (Francia)",
+        "chart_title": "📊 Resumen de Precios del Mercado", "quote_title": "💡 Perspectiva Financiera Diaria",
+        "cta_title": "¿Buscas un Analista Financiero de primer nivel?", "cta_desc": "Construyamos juntos el futuro del M&A y Capital Privado.", "cta_btn": "📩 Conectar en LinkedIn",
         # Docs Section
         "doc_head": "📖 Metodología Financiera y Especificaciones",
         "doc_wacc": "#### ⚙️ 1. Costo de Capital (WACC y CAPM)",
@@ -112,6 +123,9 @@ t = {
         "launch": "تشغيل الوحدة",
         "recent_act": "⏱️ الجلسات الأخيرة", "view_hist": "عرض السجل الكامل", "no_recent": "لم يتم العثور على جلسات أخيرة.",
         "guest_btn": "🚀 المتابعة كضيف",
+        "macro_title": "🌍 المؤشرات الماكرو-اقتصادية الكبرى", "masi": "مازي (المغرب)", "sp500": "إس آند بي 500 (أمريكا)", "cac40": "كاك 40 (فرنسا)",
+        "chart_title": "📊 نظرة عامة على أسعار السوق", "quote_title": "💡 حكمة مالية اليوم",
+        "cta_title": "هل تبحث عن محلل مالي محترف لتعزيز فريقك؟", "cta_desc": "دعنا نبني مستقبل عمليات الاندماج والاستحواذ معاً.", "cta_btn": "📩 تواصل معي عبر لينكد إن",
         # Docs Section
         "doc_head": "📖 المنهجية المالية ومواصفات النظام",
         "doc_wacc": "#### ⚙️ 1. تكلفة رأس المال (WACC و CAPM)",
@@ -124,6 +138,16 @@ t = {
 }
 lang = st.session_state.lang
 txt = t[lang]
+
+# --- QUOTES LIST ---
+quotes = [
+    "“Price is what you pay. Value is what you get.” – Warren Buffett",
+    "“In investing, what is comfortable is rarely profitable.” – Robert Arnott",
+    "“The four most dangerous words in investing are: 'this time it's different.'” – Sir John Templeton",
+    "“Risk comes from not knowing what you're doing.” – Warren Buffett",
+    "“Behind every stock is a company. Find out what it's doing.” – Peter Lynch"
+]
+todays_quote = quotes[datetime.today().day % len(quotes)]
 
 # ==========================================
 # 2. SUPABASE SETUP
@@ -186,10 +210,18 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
     /* Elegant Banner */
-    .full-width-banner {{ position: relative; width: 100%; height: 260px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2.5rem; border-radius: 12px; border-left: 6px solid #c1272d; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }}
+    .full-width-banner {{ position: relative; width: 100%; height: 260px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 1.5rem; border-radius: 12px; border-left: 6px solid #c1272d; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }}
     .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.85) 40%, rgba(193,39,45,0.2) 100%); }}
     .banner-content {{ position: absolute; top: 50%; left: 40px; transform: translateY(-50%); z-index: 2; }}
     .moroccan-badge {{ display: inline-block; background: rgba(193,39,45,0.25); border: 1px solid #c1272d; padding: 6px 18px; border-radius: 25px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; backdrop-filter: blur(4px); }}
+    
+    /* NEW: Macro Badges */
+    .macro-card {{ background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border-radius: 8px; padding: 12px 20px; border-left: 4px solid #1f77b4; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }}
+    .macro-card:hover {{ transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); border-left-color: #2ca02c; }}
+    .macro-name {{ color: #a0aab5; font-size: 14px; margin: 0; font-weight: bold; text-transform: uppercase; }}
+    .macro-val {{ color: white; font-size: 18px; margin: 0; font-weight: bold; }}
+    .macro-pos {{ color: #2ca02c; font-size: 14px; font-weight: bold; }}
+    .macro-neg {{ color: #d62728; font-size: 14px; font-weight: bold; }}
     
     /* 📈 Ticker Tape CSS */
     .ticker-wrap {{ width: 100%; overflow: hidden; background-color: #0e1117; padding-left: 100%; box-sizing: content-box; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; }}
@@ -199,12 +231,21 @@ st.markdown(f"""
     .ticker__val {{ color: #2ca02c; margin-left: 5px; }}
 
     /* Glassmorphism Stats Container */
-    .overview-container {{ display: flex; justify-content: space-around; background: rgba(22, 26, 34, 0.6); backdrop-filter: blur(10px); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); border-top: 3px solid #c1272d; margin-bottom: 35px; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }}
+    .overview-container {{ display: flex; justify-content: space-around; background: rgba(22, 26, 34, 0.6); backdrop-filter: blur(10px); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); border-top: 3px solid #c1272d; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }}
     .overview-item {{ text-align: center; flex: 1; min-width: 200px; transition: transform 0.3s ease; }}
     .overview-item:hover {{ transform: translateY(-3px); }}
     .overview-label {{ margin: 0; color: #a0aab5; font-size: 15px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }}
     .overview-value {{ margin: 0; color: white; font-size: 26px; font-weight: 800; text-shadow: 0 0 15px rgba(255,255,255,0.15); }}
     
+    /* NEW: Quote Box */
+    .quote-box {{ background: linear-gradient(145deg, rgba(22,26,34,0.6), rgba(30,34,43,0.8)); border-left: 4px solid #f5b041; border-radius: 8px; padding: 15px 20px; font-style: italic; color: #e0e0e0; margin-bottom: 25px; display: flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }}
+    
+    /* NEW: CTA Banner */
+    .cta-banner {{ background: linear-gradient(135deg, #161a22, #1f2937); border-radius: 12px; padding: 30px; text-align: center; border: 1px solid #1f77b4; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 35px; margin-bottom: 20px; }}
+    @keyframes pulse {{ 0% {{ box-shadow: 0 0 0 0 rgba(31, 119, 180, 0.7); }} 70% {{ box-shadow: 0 0 0 15px rgba(31, 119, 180, 0); }} 100% {{ box-shadow: 0 0 0 0 rgba(31, 119, 180, 0); }} }}
+    .cta-btn {{ background-color: #1f77b4; color: white !important; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-decoration: none; display: inline-block; margin-top: 15px; transition: all 0.3s ease; animation: pulse 2s infinite; }}
+    .cta-btn:hover {{ background-color: #135d90; transform: scale(1.05); text-decoration: none; }}
+
     /* Interactive Navigation Cards */
     div[data-testid="stVerticalBlockBorderWrapper"]:has(h4) {{
         transition: all 0.3s ease;
@@ -222,10 +263,6 @@ st.markdown(f"""
     .recent-card {{ background: rgba(255,255,255,0.03); border-left: 3px solid #ff7f0e; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }}
     .recent-card h5 {{ margin: 0; color: #fff; font-size: 16px; }}
     .recent-card p {{ margin: 0; color: #b3b3b3; font-size: 13px; }}
-    
-    /* Button Polish */
-    .stButton>button {{ border-radius: 8px !important; transition: all 0.3s ease !important; font-weight: bold !important; }}
-    .stButton>button:hover {{ transform: scale(1.02); }}
 
     {rtl_css}
     
@@ -239,6 +276,7 @@ st.markdown(f"""
         .overview-item {{ width: 100%; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }}
         .overview-item:last-child {{ border-bottom: none; padding-bottom: 0; margin-bottom: 0; }}
         [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; min-width: 100% !important; margin-bottom: 15px !important; }}
+        .macro-card {{ flex-direction: column; align-items: flex-start; gap: 5px; }}
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -290,10 +328,9 @@ if st.session_state.user is None:
                         st.success("Account created successfully! Switch to Login.")
                     except Exception as e: st.error(f"Sign Up Error: {str(e)}")
             
-            # --- NEW GUEST BUTTON SECTION ---
+            # --- GUEST BUTTON ---
             st.markdown("<div style='text-align:center; color:#b3b3b3; margin: 15px 0;'>— OR —</div>", unsafe_allow_html=True)
             if st.button(txt['guest_btn'], use_container_width=True):
-                # Creating a dummy Guest user session
                 st.session_state.user = type('Guest', (), {'email': 'guest@portfolio.com', 'id': 'guest_123'})()
                 st.rerun()
 
@@ -348,6 +385,15 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
+    # --- NEW: MACRO-ECONOMIC BADGES ---
+    mac_col1, mac_col2, mac_col3 = st.columns(3)
+    with mac_col1:
+        st.markdown(f"""<div class="macro-card"><div><p class="macro-name">{txt['masi']}</p><p class="macro-val">13,245.80</p></div><div class="macro-pos">+0.42% ▲</div></div>""", unsafe_allow_html=True)
+    with mac_col2:
+        st.markdown(f"""<div class="macro-card"><div><p class="macro-name">{txt['sp500']}</p><p class="macro-val">5,431.60</p></div><div class="macro-pos">+1.12% ▲</div></div>""", unsafe_allow_html=True)
+    with mac_col3:
+        st.markdown(f"""<div class="macro-card" style="border-left-color: #d62728;"><div><p class="macro-name">{txt['cac40']}</p><p class="macro-val">7,932.10</p></div><div class="macro-neg">-0.24% ▼</div></div>""", unsafe_allow_html=True)
+
     df_dash = get_dashboard_data()
     if df_dash is not None:
         rate = st.session_state.rates[st.session_state.currency]
@@ -359,11 +405,9 @@ else:
         
         # Calculate Smart Stats
         avg_pe = df_dash["PE_Ratio"].mean()
-        
         prem_stock_row = df_dash.loc[df_dash["Price_MAD"].idxmax()]
         prem_stock_name = prem_stock_row["Company"]
         prem_stock_val = prem_stock_row["Price_MAD"] * rate
-        
         value_stock_row = df_dash.loc[df_dash["PE_Ratio"].idxmin()]
         value_stock_name = value_stock_row["Company"]
         value_stock_pe = value_stock_row["PE_Ratio"]
@@ -384,7 +428,15 @@ else:
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
+        
+        # --- NEW: MINI MARKET CHART ---
+        st.markdown(f"#### {txt['chart_title']}")
+        df_dash['Converted_Price'] = df_dash['Price_MAD'] * rate
+        fig_mini = px.bar(df_dash, x="Company", y="Converted_Price", color="Converted_Price", color_continuous_scale="Viridis")
+        fig_mini.update_layout(template="plotly_dark", height=280, margin=dict(l=0, r=0, t=10, b=0), coloraxis_showscale=False, xaxis_title="", yaxis_title=f"Price ({symbol})")
+        st.plotly_chart(fig_mini, use_container_width=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
     # --- RECENT ACTIVITY SECTION ---
     if st.session_state.user.email != 'guest@portfolio.com':
         recent_sessions = get_recent_history(st.session_state.user.id)
@@ -406,6 +458,16 @@ else:
                 st.markdown("<br>", unsafe_allow_html=True)
                 if st.button(txt['view_hist'], use_container_width=True): st.switch_page("pages/6_My_History.py")
             st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- NEW: DAILY QUOTE ---
+    st.markdown(f"""
+    <div class="quote-box" {'dir="rtl"' if lang=="العربية" else ''}>
+        <div style="font-size: 24px; margin-right: 15px;">{txt['quote_title'].split()[0]}</div>
+        <div>
+            <span style="font-size: 1.1rem;">{todays_quote}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # --- NAVIGATION MODULES ---
     st.markdown(f"### {txt['nav']}")
@@ -446,3 +508,12 @@ else:
             st.markdown(f"<h4 style='color:#17becf; margin-top:0;'>{txt['ac_title']}</h4>", unsafe_allow_html=True)
             st.markdown(f"<p style='color:#b3b3b3; font-size:0.85rem; height:45px;'>{txt['ac_desc']}</p>", unsafe_allow_html=True)
             if st.button(txt['launch'], key="b6", use_container_width=True): st.switch_page("pages/5_About_Creator.py")
+
+    # --- NEW: CTA BANNER FOR RECRUITERS ---
+    st.markdown(f"""
+    <div class="cta-banner" {'dir="rtl"' if lang=="العربية" else ''}>
+        <h2 style="color: white; margin-bottom: 5px;">{txt['cta_title']}</h2>
+        <p style="color: #a0aab5; font-size: 1.1rem; margin-bottom: 5px;">{txt['cta_desc']}</p>
+        <a href="https://www.linkedin.com/in/zakaria-elaidi/" target="_blank" class="cta-btn">{txt['cta_btn']}</a>
+    </div>
+    """, unsafe_allow_html=True)
