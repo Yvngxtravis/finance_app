@@ -89,13 +89,14 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
-    /* Archive Banner Styling */
-    .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1556761175-5973dc0f32d7?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #8B4513; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
-    .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0.8) 50%, rgba(139,69,19,0.4) 100%); }}
+    /* Archive Banner Styling with Fixed Image Visibility */
+    .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #8B4513; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
+    .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0.6) 50%, rgba(139,69,19,0.3) 100%); }}
     .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
     
     /* Stats Box Styling */
-    .stat-box {{ background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-top: 3px solid #8B4513; text-align: center; }}
+    .stat-box {{ background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-top: 3px solid #8B4513; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.3s; }}
+    .stat-box:hover {{ transform: translateY(-3px); }}
     
     {rtl_css}
     
@@ -188,7 +189,7 @@ else:
     with col_stat1:
         st.markdown(f"<div class='stat-box'><h4>{txt['stats_ttl']}</h4><h2>{total_sessions}</h2></div>", unsafe_allow_html=True)
     with col_stat2:
-        st.markdown(f"<div class='stat-box'><h4>{txt['stats_rev']}</h4><h2>{converted_total_rev:,.0f} {sym}</h2></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stat-box'><h4>{txt['stats_rev']}</h4><h2 style='color:#1f77b4;'>{converted_total_rev:,.0f} {sym}</h2></div>", unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
