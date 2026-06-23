@@ -170,12 +170,23 @@ st.markdown(f"""
     .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
     .moroccan-badge {{ display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }}
     
-    .overview-container {{ display: flex; justify-content: space-around; background-color: #161a22; padding: 20px; border-radius: 8px; border-top: 3px solid #333; margin-bottom: 30px;}}
-    .overview-item {{ text-align: center; }}
+    .overview-container {{ display: flex; justify-content: space-around; background-color: #161a22; padding: 20px; border-radius: 8px; border-top: 3px solid #333; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }}
+    .overview-item {{ text-align: center; flex: 1; min-width: 200px; }}
     .overview-label {{ margin: 0; color: #b3b3b3; font-size: 14px; margin-bottom: 5px; }}
     .overview-value {{ margin: 0; color: white; font-size: 24px; font-weight: bold; }}
     
     {rtl_css}
+    
+    /* MOBILE RESPONSIVENESS HACKS */
+    @media (max-width: 768px) {{
+        .block-container {{ padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
+        .full-width-banner h1 {{ font-size: 1.8rem !important; }}
+        .full-width-banner p {{ font-size: 1rem !important; }}
+        .overview-container {{ flex-direction: column; align-items: center; padding: 15px; }}
+        .overview-item {{ width: 100%; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }}
+        .overview-item:last-child {{ border-bottom: none; padding-bottom: 0; margin-bottom: 0; }}
+        [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; min-width: 100% !important; margin-bottom: 15px !important; }}
+    }}
 </style>
 """, unsafe_allow_html=True)
 
