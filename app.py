@@ -162,28 +162,56 @@ else:
 
 st.markdown(f"""
 <style>
+    /* Global Fade-in Animation */
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .block-container {{ animation: fadeIn 0.6s ease-out; }}
+
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
-    .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2rem; border-radius: 10px; border-left: 5px solid #c1272d; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
-    .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.8) 40%, rgba(193,39,45,0.2) 100%); }}
-    .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
-    .moroccan-badge {{ display: inline-block; background: rgba(193,39,45,0.2); border: 1px solid #c1272d; padding: 5px 15px; border-radius: 20px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; }}
+    /* Elegant Banner */
+    .full-width-banner {{ position: relative; width: 100%; height: 260px; background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 2.5rem; border-radius: 12px; border-left: 6px solid #c1272d; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }}
+    .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,1) 0%, rgba(14,17,23,0.85) 40%, rgba(193,39,45,0.2) 100%); }}
+    .banner-content {{ position: absolute; top: 50%; left: 40px; transform: translateY(-50%); z-index: 2; }}
+    .moroccan-badge {{ display: inline-block; background: rgba(193,39,45,0.25); border: 1px solid #c1272d; padding: 6px 18px; border-radius: 25px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; backdrop-filter: blur(4px); }}
     
-    .overview-container {{ display: flex; justify-content: space-around; background-color: #161a22; padding: 20px; border-radius: 8px; border-top: 3px solid #333; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }}
-    .overview-item {{ text-align: center; flex: 1; min-width: 200px; }}
-    .overview-label {{ margin: 0; color: #b3b3b3; font-size: 14px; margin-bottom: 5px; }}
-    .overview-value {{ margin: 0; color: white; font-size: 24px; font-weight: bold; }}
+    /* Glassmorphism Stats Container */
+    .overview-container {{ display: flex; justify-content: space-around; background: rgba(22, 26, 34, 0.6); backdrop-filter: blur(10px); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); border-top: 3px solid #c1272d; margin-bottom: 35px; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }}
+    .overview-item {{ text-align: center; flex: 1; min-width: 200px; transition: transform 0.3s ease; }}
+    .overview-item:hover {{ transform: translateY(-3px); }}
+    .overview-label {{ margin: 0; color: #a0aab5; font-size: 15px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }}
+    .overview-value {{ margin: 0; color: white; font-size: 28px; font-weight: 800; text-shadow: 0 0 15px rgba(255,255,255,0.15); }}
     
+    /* Interactive Navigation Cards */
+    div[data-testid="stVerticalBlockBorderWrapper"]:has(h4) {{
+        transition: all 0.3s ease;
+        background: linear-gradient(145deg, rgba(30,34,43,0.4), rgba(22,26,34,0.8));
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+    }}
+    div[data-testid="stVerticalBlockBorderWrapper"]:has(h4):hover {{
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+        border-color: rgba(255,255,255,0.2) !important;
+    }}
+    
+    /* Button Polish */
+    .stButton>button {{ border-radius: 8px !important; transition: all 0.3s ease !important; font-weight: bold !important; }}
+    .stButton>button:hover {{ transform: scale(1.02); }}
+
     {rtl_css}
     
     /* MOBILE RESPONSIVENESS HACKS */
     @media (max-width: 768px) {{
-        .block-container {{ padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
+        .block-container {{ padding-top: 2rem !important; padding-left: 0.8rem !important; padding-right: 0.8rem !important; }}
         .full-width-banner h1 {{ font-size: 1.8rem !important; }}
         .full-width-banner p {{ font-size: 1rem !important; }}
+        .banner-content {{ left: 20px; }}
         .overview-container {{ flex-direction: column; align-items: center; padding: 15px; }}
-        .overview-item {{ width: 100%; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }}
+        .overview-item {{ width: 100%; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }}
         .overview-item:last-child {{ border-bottom: none; padding-bottom: 0; margin-bottom: 0; }}
         [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; min-width: 100% !important; margin-bottom: 15px !important; }}
     }}
@@ -265,7 +293,7 @@ else:
             st.divider()
             st.markdown(txt['sys'])
             
-            # TRIGGER MODAL INSTEAD OF COMING SOON
+            # TRIGGER MODAL
             if st.button(txt['docs'], use_container_width=True): 
                 show_docs_modal()
                 
