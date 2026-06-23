@@ -4,9 +4,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 import requests
+import json
 from bs4 import BeautifulSoup
-import urllib.parse
-import concurrent.futures
+import yfinance as yf
 
 # --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
@@ -79,12 +79,14 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
+    /* BTP Banner Styling */
     .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #2ca02c; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
     .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0.4) 50%, rgba(44,160,44,0.3) 100%); }}
     .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
     
     {rtl_css}
     
+    /* Mobile Responsiveness */
     @media (max-width: 768px) {{
         .block-container {{ padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
         [data-testid="stDataFrame"] {{ overflow-x: auto !important; max-width: 100% !important; }}
@@ -114,77 +116,79 @@ with col_clear2:
         st.cache_data.clear()
         st.rerun()
 
-# --- THE ULTIMATE LIVE MARKET ENGINE (HYBRID BATCH + CONCURRENT PROXY) ---
+# --- THE GUARANTEED 3-LAYER LIVE MARKET ENGINE ---
 @st.cache_data(ttl=300, show_spinner=False)
-def fetch_live_market_data_ultimate():
+def fetch_live_market_data_guaranteed():
     fallbacks = {
-        "LafargeHolcim": {"Price_MAD": 1780, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0, "yf": "LHM.CM", "gf": "LHM:CMA"},
-        "Addoha": {"Price_MAD": 33, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0, "yf": "ADH.CM", "gf": "ADH:CMA"},
-        "Alliances": {"Price_MAD": 260, "PE_Ratio": 10.5, "Net_Margin_%": 9.0, "ROE_%": 15.5, "Gearing_%": 135.0, "yf": "ADI.CM", "gf": "ADI:CMA"},
-        "Ciments du Maroc": {"Price_MAD": 1750, "PE_Ratio": 16.8, "Net_Margin_%": 15.2, "ROE_%": 20.1, "Gearing_%": 40.0, "yf": "CMA.CM", "gf": "CMA:CMA"},
-        "TGCC": {"Price_MAD": 330, "PE_Ratio": 15.0, "Net_Margin_%": 12.5, "ROE_%": 18.5, "Gearing_%": 85.0, "yf": "TGC.CM", "gf": "TGC:CMA"},
-        "Sonasid": {"Price_MAD": 870, "PE_Ratio": 14.5, "Net_Margin_%": 5.2, "ROE_%": 8.5, "Gearing_%": 20.0, "yf": "SND.CM", "gf": "SND:CMA"},
-        "Jet Contractors": {"Price_MAD": 500, "PE_Ratio": 18.0, "Net_Margin_%": 6.0, "ROE_%": 12.0, "Gearing_%": 110.0, "yf": "JET.CM", "gf": "JET:CMA"},
-        "Colorado": {"Price_MAD": 53, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0, "yf": "COL.CM", "gf": "COL:CMA"}
+        "LafargeHolcim": {"Price_MAD": 1780, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0, "tv": "LHM", "yf": "LHM.CM", "gf": "LHM:CMA"},
+        "Addoha": {"Price_MAD": 33, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0, "tv": "ADH", "yf": "ADH.CM", "gf": "ADH:CMA"},
+        "Alliances": {"Price_MAD": 260, "PE_Ratio": 10.5, "Net_Margin_%": 9.0, "ROE_%": 15.5, "Gearing_%": 135.0, "tv": "ADI", "yf": "ADI.CM", "gf": "ADI:CMA"},
+        "Ciments du Maroc": {"Price_MAD": 1750, "PE_Ratio": 16.8, "Net_Margin_%": 15.2, "ROE_%": 20.1, "Gearing_%": 40.0, "tv": "CMA", "yf": "CMA.CM", "gf": "CMA:CMA"},
+        "TGCC": {"Price_MAD": 330, "PE_Ratio": 15.0, "Net_Margin_%": 12.5, "ROE_%": 18.5, "Gearing_%": 85.0, "tv": "TGC", "yf": "TGC.CM", "gf": "TGC:CMA"},
+        "Sonasid": {"Price_MAD": 870, "PE_Ratio": 14.5, "Net_Margin_%": 5.2, "ROE_%": 8.5, "Gearing_%": 20.0, "tv": "SND", "yf": "SND.CM", "gf": "SND:CMA"},
+        "Jet Contractors": {"Price_MAD": 500, "PE_Ratio": 18.0, "Net_Margin_%": 6.0, "ROE_%": 12.0, "Gearing_%": 110.0, "tv": "JET", "yf": "JET.CM", "gf": "JET:CMA"},
+        "Colorado": {"Price_MAD": 53, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0, "tv": "COL", "yf": "COL.CM", "gf": "COL:CMA"}
     }
 
     live_prices = {}
-    
-    # 1. ATTEMPT: YAHOO FINANCE BATCH API (Lightning fast, 1 request for all)
+
+    # LAYER 1: TRADINGVIEW GLOBAL SCANNER (Bulletproof)
     try:
-        symbols = ",".join([v["yf"] for v in fallbacks.values()])
-        yf_url = f"https://query2.finance.yahoo.com/v7/finance/quote?symbols={symbols}"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        res = requests.get(yf_url, headers=headers, timeout=3)
+        tv_payload = {
+            "symbols": {"tickers": [f"BVC:{v['tv']}" for v in fallbacks.values()]},
+            "columns": ["close"]
+        }
+        res = requests.post("https://scanner.tradingview.com/global/scan", json=tv_payload, timeout=5)
         if res.status_code == 200:
-            results = res.json().get("quoteResponse", {}).get("result", [])
-            for item in results:
-                tkr = item.get("symbol")
-                price = item.get("regularMarketPrice")
-                comp_name = next((name for name, data in fallbacks.items() if data["yf"] == tkr), None)
-                if comp_name and price:
-                    live_prices[comp_name] = {"Price_MAD": float(price), "Data_Status": "🟢 LIVE (YF API)"}
+            for item in res.json().get("data", []):
+                tkr_raw = item.get("s", "").replace("BVC:", "")
+                price = item.get("d", [None])[0]
+                comp_name = next((name for name, data in fallbacks.items() if data["tv"] == tkr_raw), None)
+                if comp_name and price is not None:
+                    live_prices[comp_name] = {"Price_MAD": float(price), "Data_Status": "🟢 LIVE (TV)"}
     except Exception:
         pass
 
-    # 2. ATTEMPT: GOOGLE FINANCE VIA PARALLEL PROXIES (If YF is blocked, this fills the gaps)
-    missing_stocks = [name for name in fallbacks.keys() if name not in live_prices]
-    
-    if missing_stocks:
-        def fetch_gf(name):
-            gf_tkr = fallbacks[name]["gf"]
-            gf_url = f"https://www.google.com/finance/quote/{gf_tkr}?hl=en"
-            
-            # Step A: Direct Google Fetch
+    # LAYER 2: YAHOO FINANCE BATCH DOWNLOAD (If TV missed any)
+    if len(live_prices) < 8:
+        try:
+            missing_yf = {v["yf"]: name for name, v in fallbacks.items() if name not in live_prices}
+            if missing_yf:
+                df_yf = yf.download(list(missing_yf.keys()), period="1d", progress=False)
+                if not df_yf.empty and 'Close' in df_yf:
+                    for tkr, comp_name in missing_yf.items():
+                        try:
+                            if len(missing_yf) == 1:
+                                price = float(df_yf['Close'].iloc[-1])
+                            else:
+                                price = float(df_yf['Close'][tkr].iloc[-1])
+                            if price > 0:
+                                live_prices[comp_name] = {"Price_MAD": price, "Data_Status": "🟢 LIVE (YF)"}
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+    # LAYER 3: GOOGLE FINANCE DIRECT SCRAPE (Last resort for any remaining gaps)
+    if len(live_prices) < 8:
+        missing_gf = [name for name in fallbacks.keys() if name not in live_prices]
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        for comp in missing_gf:
             try:
-                r = requests.get(gf_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=2)
+                tkr = fallbacks[comp]["gf"]
+                url = f"https://www.google.com/finance/quote/{tkr}?hl=en"
+                r = requests.get(url, headers=headers, timeout=3)
                 if r.status_code == 200:
                     soup = BeautifulSoup(r.text, 'html.parser')
-                    p = soup.find("div", class_="YMlKec fxKbKc")
-                    if p: return name, float(p.text.replace("MAD","").replace(",","").replace("\xa0","").strip()), "🟢 LIVE (GF Direct)"
-            except: pass
-            
-            # Step B: Proxy Fetch (Bypasses IP Ban entirely)
-            try:
-                encoded = urllib.parse.quote(gf_url)
-                r = requests.get(f"https://api.allorigins.win/raw?url={encoded}", timeout=4)
-                if r.status_code == 200:
-                    soup = BeautifulSoup(r.text, 'html.parser')
-                    p = soup.find("div", class_="YMlKec fxKbKc")
-                    if p: return name, float(p.text.replace("MAD","").replace(",","").replace("\xa0","").strip()), "🟢 LIVE (GF Proxy)"
-            except: pass
-            
-            return name, None, "🔴 Fallback"
+                    price_div = soup.find("div", class_="YMlKec fxKbKc")
+                    if price_div:
+                        clean_price = float(price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").replace("\xa0", "").strip())
+                        if clean_price > 0:
+                            live_prices[comp] = {"Price_MAD": clean_price, "Data_Status": "🟢 LIVE (GF)"}
+            except Exception:
+                pass
 
-        # Runs missing requests simultaneously (Max 4 seconds wait time)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            futures = [executor.submit(fetch_gf, name) for name in missing_stocks]
-            for future in concurrent.futures.as_completed(futures):
-                name, price, status = future.result()
-                if price is not None:
-                    live_prices[name] = {"Price_MAD": price, "Data_Status": status}
-
-    # 3. COMPILE FINAL DATA
+    # Compile Final Data
     final_data = []
     for name, metrics in fallbacks.items():
         actual_price = metrics["Price_MAD"]
@@ -206,8 +210,8 @@ def fetch_live_market_data_ultimate():
 
     return pd.DataFrame(final_data)
 
-with st.spinner("⚡ Fetching Live Market Data (Hybrid Engine)..."):
-    df_live = fetch_live_market_data_ultimate().copy()
+with st.spinner("⚡ Connecting to Markets..."):
+    df_live = fetch_live_market_data_guaranteed().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
     df_live["Price_Converted"] = df_live["Price_MAD"] * rate
