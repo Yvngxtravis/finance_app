@@ -84,6 +84,13 @@ if lang == "العربية":
 
 st.markdown(f"""
 <style>
+    /* Global Fade-in Animation */
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .block-container {{ animation: fadeIn 0.6s ease-out; }}
+
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
