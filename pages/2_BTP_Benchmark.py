@@ -5,8 +5,9 @@ import plotly.graph_objects as go
 import numpy as np
 import requests
 import json
+import urllib.parse
 from bs4 import BeautifulSoup
-import yfinance as yf
+import concurrent.futures
 
 # --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
@@ -79,14 +80,12 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
-    /* BTP Banner Styling */
     .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #2ca02c; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
     .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0.4) 50%, rgba(44,160,44,0.3) 100%); }}
     .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
     
     {rtl_css}
     
-    /* Mobile Responsiveness */
     @media (max-width: 768px) {{
         .block-container {{ padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
         [data-testid="stDataFrame"] {{ overflow-x: auto !important; max-width: 100% !important; }}
@@ -116,77 +115,80 @@ with col_clear2:
         st.cache_data.clear()
         st.rerun()
 
-# --- THE GUARANTEED 3-LAYER LIVE MARKET ENGINE ---
+# --- THE ULTIMATE MARKETWATCH SCRAPER (NO API BLOCKS) ---
 @st.cache_data(ttl=300, show_spinner=False)
-def fetch_live_market_data_guaranteed():
+def fetch_live_market_data_pro():
     fallbacks = {
-        "LafargeHolcim": {"Price_MAD": 1780, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0, "tv": "LHM", "yf": "LHM.CM", "gf": "LHM:CMA"},
-        "Addoha": {"Price_MAD": 33, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0, "tv": "ADH", "yf": "ADH.CM", "gf": "ADH:CMA"},
-        "Alliances": {"Price_MAD": 260, "PE_Ratio": 10.5, "Net_Margin_%": 9.0, "ROE_%": 15.5, "Gearing_%": 135.0, "tv": "ADI", "yf": "ADI.CM", "gf": "ADI:CMA"},
-        "Ciments du Maroc": {"Price_MAD": 1750, "PE_Ratio": 16.8, "Net_Margin_%": 15.2, "ROE_%": 20.1, "Gearing_%": 40.0, "tv": "CMA", "yf": "CMA.CM", "gf": "CMA:CMA"},
-        "TGCC": {"Price_MAD": 330, "PE_Ratio": 15.0, "Net_Margin_%": 12.5, "ROE_%": 18.5, "Gearing_%": 85.0, "tv": "TGC", "yf": "TGC.CM", "gf": "TGC:CMA"},
-        "Sonasid": {"Price_MAD": 870, "PE_Ratio": 14.5, "Net_Margin_%": 5.2, "ROE_%": 8.5, "Gearing_%": 20.0, "tv": "SND", "yf": "SND.CM", "gf": "SND:CMA"},
-        "Jet Contractors": {"Price_MAD": 500, "PE_Ratio": 18.0, "Net_Margin_%": 6.0, "ROE_%": 12.0, "Gearing_%": 110.0, "tv": "JET", "yf": "JET.CM", "gf": "JET:CMA"},
-        "Colorado": {"Price_MAD": 53, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0, "tv": "COL", "yf": "COL.CM", "gf": "COL:CMA"}
+        "LafargeHolcim": {"Price_MAD": 1780, "PE_Ratio": 18.2, "Net_Margin_%": 16.5, "ROE_%": 22.0, "Gearing_%": 45.0, "mw": "lhm", "yf": "LHM.CM"},
+        "Addoha": {"Price_MAD": 33, "PE_Ratio": 12.0, "Net_Margin_%": 8.5, "ROE_%": 14.0, "Gearing_%": 120.0, "mw": "adh", "yf": "ADH.CM"},
+        "Alliances": {"Price_MAD": 260, "PE_Ratio": 10.5, "Net_Margin_%": 9.0, "ROE_%": 15.5, "Gearing_%": 135.0, "mw": "adi", "yf": "ADI.CM"},
+        "Ciments du Maroc": {"Price_MAD": 1750, "PE_Ratio": 16.8, "Net_Margin_%": 15.2, "ROE_%": 20.1, "Gearing_%": 40.0, "mw": "cma", "yf": "CMA.CM"},
+        "TGCC": {"Price_MAD": 330, "PE_Ratio": 15.0, "Net_Margin_%": 12.5, "ROE_%": 18.5, "Gearing_%": 85.0, "mw": "tgc", "yf": "TGC.CM"},
+        "Sonasid": {"Price_MAD": 870, "PE_Ratio": 14.5, "Net_Margin_%": 5.2, "ROE_%": 8.5, "Gearing_%": 20.0, "mw": "snd", "yf": "SND.CM"},
+        "Jet Contractors": {"Price_MAD": 500, "PE_Ratio": 18.0, "Net_Margin_%": 6.0, "ROE_%": 12.0, "Gearing_%": 110.0, "mw": "jet", "yf": "JET.CM"},
+        "Colorado": {"Price_MAD": 53, "PE_Ratio": 15.5, "Net_Margin_%": 8.5, "ROE_%": 11.0, "Gearing_%": 15.0, "mw": "col", "yf": "COL.CM"}
     }
 
-    live_prices = {}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5"
+    }
 
-    # LAYER 1: TRADINGVIEW GLOBAL SCANNER (Bulletproof)
-    try:
-        tv_payload = {
-            "symbols": {"tickers": [f"BVC:{v['tv']}" for v in fallbacks.values()]},
-            "columns": ["close"]
-        }
-        res = requests.post("https://scanner.tradingview.com/global/scan", json=tv_payload, timeout=5)
-        if res.status_code == 200:
-            for item in res.json().get("data", []):
-                tkr_raw = item.get("s", "").replace("BVC:", "")
-                price = item.get("d", [None])[0]
-                comp_name = next((name for name, data in fallbacks.items() if data["tv"] == tkr_raw), None)
-                if comp_name and price is not None:
-                    live_prices[comp_name] = {"Price_MAD": float(price), "Data_Status": "🟢 LIVE (TV)"}
-    except Exception:
-        pass
-
-    # LAYER 2: YAHOO FINANCE BATCH DOWNLOAD (If TV missed any)
-    if len(live_prices) < 8:
+    def fetch_price(name, data):
+        # LAYER 1: MarketWatch HTML (Professional site, highly reliable, no strict AWS block)
         try:
-            missing_yf = {v["yf"]: name for name, v in fallbacks.items() if name not in live_prices}
-            if missing_yf:
-                df_yf = yf.download(list(missing_yf.keys()), period="1d", progress=False)
-                if not df_yf.empty and 'Close' in df_yf:
-                    for tkr, comp_name in missing_yf.items():
-                        try:
-                            if len(missing_yf) == 1:
-                                price = float(df_yf['Close'].iloc[-1])
-                            else:
-                                price = float(df_yf['Close'][tkr].iloc[-1])
-                            if price > 0:
-                                live_prices[comp_name] = {"Price_MAD": price, "Data_Status": "🟢 LIVE (YF)"}
-                        except Exception:
-                            pass
-        except Exception:
-            pass
+            url_mw = f"https://www.marketwatch.com/investing/stock/{data['mw']}?countrycode=ma"
+            res = requests.get(url_mw, headers=headers, timeout=5)
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                price_tag = soup.find("bg-quote", class_="value")
+                if price_tag:
+                    val = float(price_tag.text.replace(",", "").strip())
+                    if val > 0:
+                        return name, val, "🟢 LIVE (MW)"
+        except: pass
 
-    # LAYER 3: GOOGLE FINANCE DIRECT SCRAPE (Last resort for any remaining gaps)
-    if len(live_prices) < 8:
-        missing_gf = [name for name in fallbacks.keys() if name not in live_prices]
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        for comp in missing_gf:
-            try:
-                tkr = fallbacks[comp]["gf"]
-                url = f"https://www.google.com/finance/quote/{tkr}?hl=en"
-                r = requests.get(url, headers=headers, timeout=3)
-                if r.status_code == 200:
-                    soup = BeautifulSoup(r.text, 'html.parser')
-                    price_div = soup.find("div", class_="YMlKec fxKbKc")
-                    if price_div:
-                        clean_price = float(price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").replace("\xa0", "").strip())
-                        if clean_price > 0:
-                            live_prices[comp] = {"Price_MAD": clean_price, "Data_Status": "🟢 LIVE (GF)"}
-            except Exception:
-                pass
+        # LAYER 2: Yahoo Finance HTML (Bypasses their API blocks)
+        try:
+            url_yf = f"https://finance.yahoo.com/quote/{data['yf']}"
+            res = requests.get(url_yf, headers=headers, timeout=5)
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                price_tag = soup.find("fin-streamer", {"data-symbol": data['yf'], "data-field": "regularMarketPrice"})
+                if price_tag:
+                    val = float(price_tag.text.replace(",", "").strip())
+                    if val > 0:
+                        return name, val, "🟢 LIVE (YF Html)"
+        except: pass
+
+        # LAYER 3: Google Finance via Anonymous Proxy (Last Resort)
+        try:
+            gf_url = f"https://www.google.com/finance/quote/{data['mw'].upper()}:CMA"
+            proxy_url = f"https://api.allorigins.win/get?url={urllib.parse.quote(gf_url)}"
+            res = requests.get(proxy_url, timeout=6)
+            if res.status_code == 200:
+                html = res.json().get('contents', '')
+                soup = BeautifulSoup(html, 'html.parser')
+                price_div = soup.find("div", class_="YMlKec fxKbKc")
+                if price_div:
+                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").replace("\xa0", "").strip()
+                    val = float(clean_price)
+                    if val > 0:
+                        return name, val, "🟢 LIVE (GF Proxy)"
+        except: pass
+
+        return name, None, "🔴 Fallback"
+
+    live_prices = {}
+    
+    # Run all requests blazingly fast in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(fetch_price, name, data) for name, data in fallbacks.items()]
+        for future in concurrent.futures.as_completed(futures):
+            name, price, status = future.result()
+            if price is not None:
+                live_prices[name] = {"Price_MAD": price, "Data_Status": status}
 
     # Compile Final Data
     final_data = []
@@ -210,8 +212,8 @@ def fetch_live_market_data_guaranteed():
 
     return pd.DataFrame(final_data)
 
-with st.spinner("⚡ Connecting to Markets..."):
-    df_live = fetch_live_market_data_guaranteed().copy()
+with st.spinner("⚡ Connecting to Global Markets (MarketWatch Engine)..."):
+    df_live = fetch_live_market_data_pro().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
     df_live["Price_Converted"] = df_live["Price_MAD"] * rate
