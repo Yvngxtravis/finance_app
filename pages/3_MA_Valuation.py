@@ -43,20 +43,20 @@ t = {
         "sb_tools": "🛠️ Analyst Tools", "fx_title": "🌍 FX Rates (Base MAD)", "calc_title": "🧮 Quick CAGR Calc",
         "pv": "Present Value", "fv": "Future Value", "yrs": "Years", "cagr_res": "CAGR:", 
         "scratch_title": "📝 Scratchpad", "scratch_ph": "Jot down your deal notes here...",
-        "insight": "Insight",
+        "insight": "Analyst Lecture & Verdict",
         # Dynamic Conclusions (English)
-        "capm_good_1": "Optimal financing structure! The target benefits from a low cost of capital, making future cash flows highly valuable.",
-        "capm_good_2": "Strong investment profile: The required return is easily beatable, signaling a green light for acquisitions.",
-        "capm_good_3": "Low systematic risk detected. The cheap debt structure significantly enhances the company's valuation upside.",
-        "capm_bad_1": "High cost of capital detected. The target's risk profile (Beta) heavily discounts its future value.",
-        "capm_bad_2": "Caution: Expensive funding structure. Aggressive operational growth is needed to justify this high required return.",
-        "capm_bad_3": "Elevated systematic risk limits valuation upside. Consider restructuring the debt to lower the overall WACC.",
-        "lbo_good_1": "Highly lucrative deal! The investor is projected to yield an outstanding return, comfortably exceeding PE hurdles.",
-        "lbo_good_2": "Top-tier buyout opportunity. Rapid debt paydown and strong EBITDA growth guarantee premium exit returns.",
-        "lbo_good_3": "Exceptional value creation detected. The investor will effortlessly multiply their initial equity stake.",
-        "lbo_bad_1": "Suboptimal returns. The projected IRR falls short of the 20% benchmark; the deal structure requires renegotiation.",
-        "lbo_bad_2": "Value trap warning: A high entry multiple and heavy debt burden are crushing the investor's equity returns.",
-        "lbo_bad_3": "The investor is going to yield weak returns. Consider lowering the entry price or boosting operational margins."
+        "capm_good_1": "Highly Favorable! The target boasts a low cost of capital. Future cash flows will add significant premium to the investor's portfolio value.",
+        "capm_good_2": "Excellent financing structure. The required return on equity is easily beatable, creating an immediate valuation cushion for the buyer.",
+        "capm_good_3": "Low systematic risk detected. The cheap capital structure protects the investor's initial layout and boosts enterprise value upside.",
+        "capm_bad_1": "Unfavorable structure. The high cost of capital discounts future cash flows aggressively, reducing the final net asset value for the investor.",
+        "capm_bad_2": "Caution required: Expensive funding hurdle. Operational growth must accelerate significantly to cover this high required return.",
+        "capm_bad_3": "Elevated systematic risk limits upside. The investor faces compressed spreads unless the capital structure is heavily optimized.",
+        "lbo_good_1": "Outstanding yield! The projected IRR comfortably beats private equity thresholds. Exceptional value creation for the general partners.",
+        "lbo_good_2": "Premium Buyout Opportunity. Rapid debt paydown and operational efficiency guarantee a massive return multiple on invested capital.",
+        "lbo_good_3": "Strong operational cushion. The financial structure allows the investor to multiply initial equity stake with limited downside risk.",
+        "lbo_bad_1": "Suboptimal return profile. Projected IRR falls short of standard PE benchmarks; entry terms must be completely renegotiated.",
+        "lbo_bad_2": "Value Trap Warning: High entry multiples coupled with expensive debt burden are heavily crushing the investor's equity return.",
+        "lbo_bad_3": "Weak investor returns detected. Operational leverage is insufficient to generate attractive cash-on-cash multiples at exit."
     },
     "Français": {
         "title": "💼 Salle des Marchés M&A & Private Equity", "banner_desc": "Valorisation Avancée, Modélisation LBO & Analyse des Risques",
@@ -66,7 +66,7 @@ t = {
         "sb_title": "🏢 Données Financières de Base", "sb_info": "Saisissez les données financières de base de la cible (en MAD).",
         "b_rev": "Revenus de Base (MAD)", "b_ebitda": "EBITDA de Base (MAD)",
         "capm_title": "⚙️ Calculateur WACC Avancé (MEDAF)",
-        "capm_def": "**Modèle d'Évaluation des Actifs Financiers (MEDAF) :** Modèle financier utilisé pour calculer la rentabilité attendue des capitaux propres ($K_e$). Il établit une relation linéaire entre la rentabilité requise et le risque systématique ($\\beta$).\n\n**Formule :** $K_e = R_f + \\beta \\times (R_m - R_f)$",
+        "capm_def": "**Considérations MEDAF :** Le modèle calcule la rentabilité attendue des capitaux propres ($K_e$). Il établit une relation linéaire entre la rentabilité requise et le risque systématique ($\\beta$).\n\n**Formule :** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Taux Sans Risque (%)", "rm": "Rendement du Marché (%)", "beta": "Bêta (β)", "tax": "Taux d'Imposition (%)", "kd": "Coût de la Dette (%)", "w_debt": "Pondération de la Dette (%)",
         "ke_res": "Coût des Capitaux Propres (Ke)", "kd_res": "Coût de la Dette après impôts (Kd)", "wacc_res": "CMPC Implicite (WACC)",
         "capm_toggle": "Activer le Mode de Calcul MEDAF", "wacc_slider": "CMPC (WACC) %",
@@ -81,20 +81,20 @@ t = {
         "sb_tools": "🛠️ Outils de l'Analyste", "fx_title": "🌍 Taux de Change", "calc_title": "🧮 Calculateur CAGR",
         "pv": "Valeur Actuelle", "fv": "Valeur Future", "yrs": "Années", "cagr_res": "TCAM :", 
         "scratch_title": "📝 Bloc-notes", "scratch_ph": "Prenez vos notes ici...",
-        "insight": "Analyse",
+        "insight": "Note de Lecture de l'Analyste",
         # Dynamic Conclusions (French)
-        "capm_good_1": "Structure de financement optimale ! Le faible coût du capital valorise fortement les flux de trésorerie futurs.",
-        "capm_good_2": "Profil d'investissement solide : Le rendement exigé est facilement atteignable, feu vert pour l'acquisition.",
-        "capm_good_3": "Faible risque systématique détecté. La dette bon marché améliore considérablement le potentiel de valorisation.",
-        "capm_bad_1": "Coût du capital élevé détecté. Le profil de risque (Bêta) réduit fortement la valeur future.",
-        "capm_bad_2": "Attention : Structure de financement coûteuse. Une croissance agressive est nécessaire pour justifier ce risque.",
-        "capm_bad_3": "Le risque systématique élevé limite la valorisation. Envisagez de restructurer la dette pour baisser le CMPC.",
-        "lbo_good_1": "Opération très lucrative ! L'investisseur devrait obtenir un rendement exceptionnel dépassant les standards PE.",
-        "lbo_good_2": "Opportunité de rachat de premier plan. Le désendettement rapide garantit des rendements de sortie premium.",
-        "lbo_good_3": "Création de valeur exceptionnelle. L'investisseur multipliera facilement sa mise de fonds initiale.",
-        "lbo_bad_1": "Rendements suboptimaux. Le TRI projeté n'atteint pas les 20 % ; la structure de l'opération doit être renégociée.",
-        "lbo_bad_2": "Alerte piège de valeur : Un multiple d'entrée élevé et une dette lourde écrasent les rendements de l'investisseur.",
-        "lbo_bad_3": "L'investisseur obtiendra de faibles rendements. Baissez le prix d'entrée ou améliorez les marges opérationnelles."
+        "capm_good_1": "Situation très favorable ! La cible bénéficie d'un coût du capital bas. Les flux financiers futurs ajouteront une prime nette de valeur pour l'investisseur.",
+        "capm_good_2": "Structure de financement optimale. Le taux de rendement exigé est facilement surmontable, protégeant immédiatement la mise de l'acheteur.",
+        "capm_good_3": "Faible risque systématique détecté. Le coût modéré du capital sécurise l'investissement et booste le potentiel de valorisation globale.",
+        "capm_bad_1": "Structure défavorable. Le coût élevé du capital pénalise l'actualisation des flux futurs, réduisant fortement la valeur nette finale pour l'investisseur.",
+        "capm_bad_2": "Prudence requise : Le coût de financement est trop lourd. Une croissance opérationnelle agressive est obligatoire pour justifier ce rendement.",
+        "capm_bad_3": "Risque systématique élevé qui bride la valorisation. L'investisseur subira des spreads compressés sans restructuration du capital.",
+        "lbo_good_1": "Excellent rendement en vue ! Le TRI projeté dépasse largement les exigences standards de l'industrie pour les actionnaires.",
+        "lbo_good_2": "Opportunité de rachat de premier plan. Le remboursement rapide de la dette et la croissance de l'EBITDA assurent un fort multiple de sortie.",
+        "lbo_good_3": "Excellente marge de sécurité financière. Le modèle permet de multiplier le capital de départ avec un profil de risque très maîtrisé.",
+        "lbo_bad_1": "Rendement insuffisant. Le TRI prévisionnel est en dessous des exigences de performance du Private Equity ; conditions d'entrée à renégocier.",
+        "lbo_bad_2": "Alerte piège de valeur : Un multiple d'entrée trop cher combiné au coût de la dette détruit le retour sur investissement des capitaux propres.",
+        "lbo_bad_3": "Faible performance pour l'investisseur. Le levier opérationnel est insuffisant pour générer des multiples de sortie attractifs."
     },
     "Español": {
         "title": "💼 Sala de Fusiones y Capital Privado (M&A)", "banner_desc": "Valoración Avanzada, Modelado LBO y Análisis de Riesgos",
@@ -106,7 +106,7 @@ t = {
         "capm_title": "⚙️ Calculadora WACC Avanzada",
         "capm_def": "**Modelo de Valoración de Activos de Capital (CAPM):** El CAPM es un modelo financiero utilizado para calcular la rentabilidad esperada del capital ($K_e$). Establece una relación lineal entre la rentabilidad y el riesgo sistemático ($\\beta$).\n\n**Fórmula:** $K_e = R_f + \\beta \\times (R_m - R_f)$",
         "rf": "Tasa Libre de Riesgo (%)", "rm": "Retorno del Mercado (%)", "beta": "Beta (β)", "tax": "Tasa Impositiva (%)", "kd": "Costo de la Deuda (%)", "w_debt": "Ponderación de Deuda (%)",
-        "ke_res": "Costo del Capital (Ke)", "kd_res": "Costo de Deuda después de impuestos (Kd)", "wacc_res": "WACC Implícito",
+        "ke_res": "Costo del Capital (Ke)", "kd_res": "Costo de Deuda después de tiempos (Kd)", "wacc_res": "WACC Implícito",
         "capm_toggle": "Habilitar Modo de Cálculo CAPM", "wacc_slider": "WACC %",
         "dcf_title": "📊 Motor DCF Estándar",
         "tg": "Crecimiento Terminal %", "pg": "Crecimiento Proyectado %", "fcfm": "Margen FCF %", "ev": "Valor Empresarial Implícito (EV)",
@@ -119,20 +119,19 @@ t = {
         "sb_tools": "🛠️ Herramientas de Análisis", "fx_title": "🌍 Tipos de Cambio", "calc_title": "🧮 Calculadora CAGR",
         "pv": "Valor Presente", "fv": "Valor Futuro", "yrs": "Años", "cagr_res": "CAGR:", 
         "scratch_title": "📝 Bloc de Notas", "scratch_ph": "Tome sus notas aquí...",
-        "insight": "Análisis",
-        # Dynamic Conclusions (Spanish)
-        "capm_good_1": "¡Estructura de financiación óptima! El bajo costo de capital hace que los flujos futuros sean muy valiosos.",
-        "capm_good_2": "Fuerte perfil de inversión: El retorno requerido es fácilmente superable, luz verde para la adquisición.",
-        "capm_good_3": "Bajo riesgo sistemático detectado. La deuda barata mejora significativamente el potencial de valoración.",
-        "capm_bad_1": "Alto costo de capital detectado. El perfil de riesgo (Beta) descuenta fuertemente su valor futuro.",
-        "capm_bad_2": "Precaución: Estructura de financiación costosa. Se necesita un crecimiento agresivo para justificar esto.",
-        "capm_bad_3": "El alto riesgo sistemático limita el potencial de valoración. Considere reestructurar la deuda para bajar el WACC.",
-        "lbo_good_1": "¡Trato muy lucrativo! Se proyecta que el inversor obtenga un rendimiento sobresaliente.",
-        "lbo_good_2": "Oportunidad de compra de primer nivel. El rápido pago de la deuda garantiza retornos de salida premium.",
-        "lbo_good_3": "Creación de valor excepcional. El inversor multiplicará fácilmente su participación de capital inicial.",
-        "lbo_bad_1": "Rendimientos subóptimos. La TIR proyectada no alcanza el 20%; la estructura requiere renegociación.",
-        "lbo_bad_2": "Advertencia de trampa de valor: Un alto múltiplo de entrada y una pesada carga de deuda aplastan los retornos.",
-        "lbo_bad_3": "El inversor obtendrá rendimientos débiles. Considere reducir el precio de entrada o mejorar los márgenes."
+        "insight": "Análisis del Evaluador",
+        "capm_good_1": "¡Estructura óptima! Costo de capital bajo que incrementa el valor neto para el inversor.",
+        "capm_good_2": "Perfil de inversión sólido. El retorno requerido es fácilmente superable.",
+        "capm_good_3": "Bajo riesgo sistemático detectado que protege la inversión inicial del comprador.",
+        "capm_bad_1": "Estructura desfavorable. El alto costo descuenta agresivamente los flujos futuros.",
+        "capm_bad_2": "Precaución: Financiamiento costoso. Se requiere un fuerte crecimiento operativo.",
+        "capm_bad_3": "El alto riesgo limita la valoración. Se requiere optimización de la deuda.",
+        "lbo_good_1": "¡Rendimiento excelente! La TIR proyectada supera con creces las expectativas.",
+        "lbo_good_2": "Gran oportunidad de compra. El rápido pago de la deuda asegura buenos retornos.",
+        "lbo_good_3": "Fuerte colchón financiero. Permite multiplicar el capital invertido con bajo riesgo.",
+        "lbo_bad_1": "Retornos subóptimos. La TIR está por debajo de los estándares del mercado.",
+        "lbo_bad_2": "Alerta de trampa de valor: Múltiplos caros destruyen el retorno de capital.",
+        "lbo_bad_3": "Rendimiento débil para el inversor. El apalancamiento operativo es insuficiente."
     },
     "العربية": {
         "title": "💼 غرفة صفقات الاندماج والاستحواذ (M&A)", "banner_desc": "التقييم المتقدم، النمذجة المالية وتحليل المخاطر",
@@ -147,7 +146,7 @@ t = {
         "ke_res": "تكلفة حقوق الملكية (Ke)", "kd_res": "تكلفة الدين بعد الضريبة (Kd)", "wacc_res": "المتوسط المرجح لتكلفة رأس المال (WACC)",
         "capm_toggle": "تمكين وضع حساب CAPM", "wacc_slider": "المتوسط المرجح لتكلفة رأس المال (WACC) %",
         "dcf_title": "📊 محرك خصم التدفقات النقدية (DCF)",
-        "tg": "النمو النهائي (Terminal Growth) %", "pg": "النمو المتوقع %", "fcfm": "هامش التدفق النقدي الحر (FCF) %", "ev": "القيمة المؤسسية الضمنية (EV)",
+        "tg": "النمو النهائي (Terminal Growth) %", "pg": "النمو المتوقع %", "fcfm": "هامش التدفق الندي الحر (FCF) %", "ev": "القيمة المؤسسية الضمنية (EV)",
         "mc_btn": "🎲 تشغيل محاكاة مونت كارلو", "mc_run": "يتم الآن تشغيل 10,000 محاكاة...",
         "mc_chart": "التوزيع الاحتمالي للقيمة المؤسسية", "freq": "التردد", "ci": "فترة ثقة 75%",
         "lbo_title": "💰 نموذج الاستحواذ المدعوم بالقروض (LBO)",
@@ -157,20 +156,19 @@ t = {
         "sb_tools": "🛠️ أدوات المحلل السريعة", "fx_title": "🌍 أسعار الصرف", "calc_title": "🧮 حاسبة النمو (CAGR)",
         "pv": "القيمة الحالية", "fv": "القيمة المستقبلية", "yrs": "السنوات", "cagr_res": "معدل النمو (CAGR):", 
         "scratch_title": "📝 مذكرة الملاحظات", "scratch_ph": "دون ملاحظاتك السريعة هنا...",
-        "insight": "قراءة تحليلية",
-        # Dynamic Conclusions (Arabic)
-        "capm_good_1": "هيكل تمويل مثالي! المستهدف يستفيد من تكلفة رأس مال منخفضة، مما يجعل التدفقات النقدية المستقبلية ذات قيمة عالية جداً.",
-        "capm_good_2": "ملف استثماري قوي: العائد المطلوب يسهل تحقيقه، مما يعطي الضوء الأخضر للمضي قدماً في الاستحواذ.",
-        "capm_good_3": "مخاطر منهجية منخفضة. هيكل الديون الرخيص يعزز بشكل كبير من إمكانات التقييم للشركة.",
-        "capm_bad_1": "تم رصد تكلفة عالية لرأس المال. ملف المخاطر (بيتا) يقلص بشكل كبير من القيمة المستقبلية للشركة.",
-        "capm_bad_2": "تحذير: تمويل باهظ التكلفة. هناك حاجة لنمو تشغيلي قوي جداً لتبرير هذا العائد المطلوب المرتفع.",
-        "capm_bad_3": "المخاطر المنهجية المرتفعة تحد من التقييم. فكر في إعادة هيكلة الديون لخفض الـ WACC الإجمالي.",
-        "lbo_good_1": "صفقة مربحة للغاية! من المتوقع أن يحقق المستثمر عائداً استثنائياً يتجاوز معايير الأسهم الخاصة بسهولة.",
-        "lbo_good_2": "فرصة استحواذ من الدرجة الأولى. السداد السريع للديون ونمو الأرباح يضمنان عوائد تخارج ممتازة.",
-        "lbo_good_3": "خلق قيمة استثنائية. المستثمر سيتمكن بسهولة من مضاعفة حصته الأولية من رأس المال.",
-        "lbo_bad_1": "عوائد دون المستوى. معدل العائد الداخلي (IRR) أقل من معيار 20٪؛ هيكل الصفقة يتطلب إعادة تفاوض.",
-        "lbo_bad_2": "تحذير من فخ القيمة: مضاعف الدخول المرتفع وعبء الديون الثقيل يسحقان عوائد المستثمر.",
-        "lbo_bad_3": "المستثمر سيحقق عوائد ضعيفة جداً. فكر في خفض سعر الدخول أو زيادة هوامش الربح التشغيلية."
+        "insight": "قراءة تحليلية للمستثمر",
+        "capm_good_1": "هيكل تمويل مثالي! تكلفة رأس مال منخفضة تضمن تحقيق قيمة مضافة ممتازة لصافي أرباح المستثمر.",
+        "capm_good_2": "ملف استثماري مريح جداً. العائد المطلوب على حقوق الملكية منخفض مما يحمي أموال المشتري.",
+        "capm_good_3": "مخاطر منهجية منخفضة تؤمن الاستثمار التشغيلي وتدعم فرص التقييم التصاعدي.",
+        "capm_bad_1": "هيكل غير ملائم. تكلفة رأس المال المرتفعة تلتهم التدفقات النقدية وتقلل القيمة الصافية للمستثمر.",
+        "capm_bad_2": "تحذير: عبء تمويلي باهظ. الشركة ملزمة بتحقيق نمو تشغيلي قوي جداً لتغطية التكلفة.",
+        "capm_bad_3": "المخاطر المنهجية المرتفعة تكبح جماح التقييم وتضيق هوامش الربح المتوقعة للمستثمر.",
+        "lbo_good_1": "عائد استثنائي في الأفق! معدل IRR المتوقع يتجاوز متطلبات الصناديق الاستثمارية الكبرى بكثير.",
+        "lbo_good_2": "فرصة استحواذ ممتازة. السداد السريع للديون يضمن تضخيم قيمة حقوق الملكية عند الخروج.",
+        "lbo_good_3": "هامش أمان مالي متميز يتيح مضاعفة رأس المال الأولي بملف مخاطر خاضع للسيطرة تماماً.",
+        "lbo_bad_1": "مستوى عوائد غير كافٍ. معدل IRR يقل عن معايير الاستحواذ؛ يجب إعادة التفاوض على شروط الدخول.",
+        "lbo_bad_2": "تحذير من فخ القيمة: مضاعفات الدخول المرتفعة مع ديون مكلفة تسحق عوائد المستثمر تماماً.",
+        "lbo_bad_3": "عوائد ضعيفة جداً للمستثمر بسبب عدم كفاية الرافعات التشغيلية لإنتاج مضاعفات تخارج جذابة."
     }
 }
 txt = t[lang]
@@ -185,6 +183,13 @@ if lang == "العربية":
 
 st.markdown(f"""
 <style>
+    /* Global Fade-in / Fade-up Animation */
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .block-container {{ animation: fadeIn 0.6s ease-out; }}
+
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
@@ -293,7 +298,11 @@ with st.container(border=True):
     else:
         wacc = st.slider(txt["wacc_slider"], 5.0, 20.0, 10.0, 0.5) / 100
         
-    # --- DYNAMIC CAPM CONCLUSION ---
+    # --- DYNAMIC CAPM/WACC INTERPRETATION (3 GOOD / 3 BAD SCENARIOS) ---
+    # Using a deterministic seed based on current parameters to prevent chaotic switching on every render
+    param_seed = int((wacc * 1000) + base_rev)
+    random.seed(param_seed)
+    
     if wacc < 0.10:
         c_color, c_bg = "#2ca02c", "44, 160, 44"
         c_text = random.choice([txt['capm_good_1'], txt['capm_good_2'], txt['capm_good_3']])
@@ -302,7 +311,7 @@ with st.container(border=True):
         c_text = random.choice([txt['capm_bad_1'], txt['capm_bad_2'], txt['capm_bad_3']])
         
     st.markdown(f"""
-    <div style="padding: 12px; border-radius: 8px; background-color: rgba({c_bg}, 0.1); border-left: 4px solid {c_color}; margin-top: 15px;">
+    <div style="padding: 14px; border-radius: 8px; background-color: rgba({c_bg}, 0.08); border-left: 5px solid {c_color}; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
         <p style="color: {c_color}; margin: 0; font-size: 0.95rem;"><b>💡 {txt['insight']}:</b> {c_text}</p>
     </div>
     """, unsafe_allow_html=True)
@@ -380,7 +389,10 @@ with col_lbo:
         </div>
         """, unsafe_allow_html=True)
         
-        # --- DYNAMIC LBO CONCLUSION ---
+        # --- DYNAMIC LBO INTERPRETATION (3 GOOD / 3 BAD SCENARIOS) ---
+        lbo_seed = int((irr * 100) + entry_mult)
+        random.seed(lbo_seed)
+        
         if irr >= 20.0:
             l_color, l_bg = "#2ca02c", "44, 160, 44"
             l_text = random.choice([txt['lbo_good_1'], txt['lbo_good_2'], txt['lbo_good_3']])
@@ -389,7 +401,7 @@ with col_lbo:
             l_text = random.choice([txt['lbo_bad_1'], txt['lbo_bad_2'], txt['lbo_bad_3']])
             
         st.markdown(f"""
-        <div style="padding: 12px; border-radius: 8px; background-color: rgba({l_bg}, 0.1); border-left: 4px solid {l_color}; margin-top: 15px;">
+        <div style="padding: 14px; border-radius: 8px; background-color: rgba({l_bg}, 0.08); border-left: 5px solid {l_color}; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
             <p style="color: {l_color}; margin: 0; font-size: 0.95rem;"><b>💡 {txt['insight']}:</b> {l_text}</p>
         </div>
         """, unsafe_allow_html=True)
