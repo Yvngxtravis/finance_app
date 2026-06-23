@@ -111,6 +111,13 @@ if lang == "العربية":
 
 st.markdown(f"""
 <style>
+    /* Global Fade-in Animation */
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(15px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    .block-container {{ animation: fadeIn 0.6s ease-out; }}
+
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     .metric-box {{ background-color: #161a22; padding: 15px; border-radius: 8px; border-top: 3px solid #1f77b4; margin-bottom: 15px; text-align: center; }}
@@ -406,16 +413,26 @@ if uploaded_file:
         
         with c_action1:
             if st.button(txt["save"], use_container_width=True):
-                session_data = {
-                    "Session_Name": f"Analysis - {datetime.now().strftime('%Y-%m-%d %H:%M')}", 
-                    "Revenue": rev_25, 
-                    "Net Margin": round(user_net_margin, 2), 
-                    "ROE": round(user_roe, 2), 
-                    "Current Ratio": round(current_ratio, 2), 
-                    "Date": datetime.now().strftime('%Y-%m-%d %H:%M')
-                }
-                if save_history(st.session_state.user.id, st.session_state.user.email, session_data): st.success(txt["success_save"])
-                else: st.error(txt["fail_save"])
+                # GUEST MODE LOCK
+                if hasattr(st.session_state.user, 'email') and st.session_state.user.email == 'guest@portfolio.com':
+                    guest_warnings = {
+                        "English": "🔒 Sign up for a free account to save your analysis history!",
+                        "Français": "🔒 Créez un compte gratuit pour sauvegarder votre historique d'analyse !",
+                        "Español": "🔒 ¡Regístrate gratis para guardar tu historial de análisis!",
+                        "العربية": "🔒 قم بإنشاء حساب مجاني لحفظ سجل تحليلاتك!"
+                    }
+                    st.warning(guest_warnings.get(lang, guest_warnings["English"]))
+                else:
+                    session_data = {
+                        "Session_Name": f"Analysis - {datetime.now().strftime('%Y-%m-%d %H:%M')}", 
+                        "Revenue": rev_25, 
+                        "Net Margin": round(user_net_margin, 2), 
+                        "ROE": round(user_roe, 2), 
+                        "Current Ratio": round(current_ratio, 2), 
+                        "Date": datetime.now().strftime('%Y-%m-%d %H:%M')
+                    }
+                    if save_history(st.session_state.user.id, st.session_state.user.email, session_data): st.success(txt["success_save"])
+                    else: st.error(txt["fail_save"])
                     
         with c_action2:
             pdf_bytes = create_rich_pdf(df_display, user_net_margin, user_roe, current_ratio, sim_rev, sim_margin, pdf_notes, pdf_txt, sym)
