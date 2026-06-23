@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import json
 from supabase import create_client, ClientOptions
 
 # MUST BE THE FIRST LINE
@@ -25,7 +26,7 @@ t = {
         "welcome": "👋 Welcome back,", "settings": "⚙️ Settings & Profile", "profile": "**User Profile**", "pref": "**Preferences**",
         "curr_lbl": "Default Currency", "lang_lbl": "Platform Language", "docs": "📖 Platform Docs", "logout": "🚪 Terminate Session",
         "cse": "Casablanca Stock Exchange", "subtitle": "BTP Sector Equity Research & Financial Analytics Hub", "badge": "🇲🇦 Moroccan Market Focus",
-        "tracked": "Tracked Companies", "avg_pe": "Sector Average P/E", "top_stock": "Highest Priced Stock", "entities": "Entities",
+        "tracked": "Tracked Companies", "avg_pe": "Sector Average P/E", "prem_stock": "Premium Stock", "value_stock": "Value Stock (Lowest P/E)", "entities": "Entities",
         "nav": "🚀 Quick Navigation Modules",
         "ca_title": "📉 Corporate Analysis", "ca_desc": "Upload Excel models, run variance analysis, and generate investment teasers.",
         "bb_title": "⚖️ Sector Benchmark", "bb_desc": "Compare target operational margins, liquidity, and ROE against Moroccan peers.",
@@ -34,6 +35,7 @@ t = {
         "mh_title": "🗄️ My History", "mh_desc": "Access, manage, and download your previously saved analysis sessions.",
         "ac_title": "👤 About Creator", "ac_desc": "Professional profile, academic background, and networking links.",
         "launch": "Launch Module",
+        "recent_act": "⏱️ Recent Sessions", "view_hist": "View Full History", "no_recent": "No recent sessions found.",
         # Docs Section
         "doc_head": "📖 Financial Methodology & Engine Specs",
         "doc_wacc": "#### ⚙️ 1. Cost of Capital (WACC & CAPM)",
@@ -48,7 +50,7 @@ t = {
         "welcome": "👋 Bon retour,", "settings": "⚙️ Paramètres & Profil", "profile": "**Profil Utilisateur**", "pref": "**Préférences**",
         "curr_lbl": "Devise par défaut", "lang_lbl": "Langue de la plateforme", "docs": "📖 Documentation", "logout": "🚪 Déconnexion",
         "cse": "Bourse de Casablanca", "subtitle": "Plateforme d'Analyse Financière et Recherche BTP", "badge": "🇲🇦 Focus Marché Marocain",
-        "tracked": "Entreprises Suivies", "avg_pe": "P/E Moyen", "top_stock": "Action la plus chère", "entities": "Entités",
+        "tracked": "Entreprises Suivies", "avg_pe": "P/E Moyen", "prem_stock": "Action Premium", "value_stock": "Action de Valeur (P/E bas)", "entities": "Entités",
         "nav": "🚀 Modules de Navigation Rapide",
         "ca_title": "📉 Analyse d'Entreprise", "ca_desc": "Importez des modèles Excel, analysez les écarts et générez des teasers.",
         "bb_title": "⚖️ Benchmark Sectoriel", "bb_desc": "Comparez les marges, la liquidité et le ROE avec les concurrents marocains.",
@@ -57,6 +59,7 @@ t = {
         "mh_title": "🗄️ Mon Historique", "mh_desc": "Accédez, gérez et téléchargez vos sessions d'analyse précédentes.",
         "ac_title": "👤 À propos du Créateur", "ac_desc": "Profil professionnel, parcours académique et liens de networking.",
         "launch": "Lancer le Module",
+        "recent_act": "⏱️ Sessions Récentes", "view_hist": "Voir l'historique complet", "no_recent": "Aucune session récente trouvée.",
         # Docs Section
         "doc_head": "📖 Méthodologie Financière et Spécifications",
         "doc_wacc": "#### ⚙️ 1. Coût du Capital (CMPC & MEDAF)",
@@ -71,7 +74,7 @@ t = {
         "welcome": "👋 Bienvenido de nuevo,", "settings": "⚙️ Ajustes y Perfil", "profile": "**Perfil de Usuario**", "pref": "**Preferencias**",
         "curr_lbl": "Moneda predeterminada", "lang_lbl": "Idioma de la plataforma", "docs": "📖 Documentación", "logout": "🚪 Cerrar Sesión",
         "cse": "Bolsa de Casablanca", "subtitle": "Centro de Análisis Financiero de Renta Variable BTP", "badge": "🇲🇦 Enfoque Mercado Marroquí",
-        "tracked": "Empresas Seguidas", "avg_pe": "P/E Promedio", "top_stock": "Acción Más Cara", "entities": "Entidades",
+        "tracked": "Empresas Seguidas", "avg_pe": "P/E Promedio", "prem_stock": "Acción Premium", "value_stock": "Acción de Valor (P/E bajo)", "entities": "Entidades",
         "nav": "🚀 Módulos de Navegación Rápida",
         "ca_title": "📉 Análisis Corporativo", "ca_desc": "Sube modelos Excel, analiza variaciones y genera informes de inversión.",
         "bb_title": "⚖️ Benchmark Sectorial", "bb_desc": "Compara márgenes, liquidez y ROE contra competidores marroquíes.",
@@ -80,6 +83,7 @@ t = {
         "mh_title": "🗄️ Mi Historial", "mh_desc": "Accede, gestiona y descarga tus sesiones de análisis guardadas.",
         "ac_title": "👤 Sobre el Creador", "ac_desc": "Perfil profesional, formación académica y enlaces de networking.",
         "launch": "Iniciar Módulo",
+        "recent_act": "⏱️ Sesiones Recientes", "view_hist": "Ver historial completo", "no_recent": "No se encontraron sesiones recientes.",
         # Docs Section
         "doc_head": "📖 Metodología Financiera y Especificaciones",
         "doc_wacc": "#### ⚙️ 1. Costo de Capital (WACC y CAPM)",
@@ -94,7 +98,7 @@ t = {
         "welcome": "👋 مرحباً بعودتك،", "settings": "⚙️ الإعدادات والملف الشخصي", "profile": "**الملف الشخصي**", "pref": "**التفضيلات**",
         "curr_lbl": "العملة الافتراضية", "lang_lbl": "لغة المنصة", "docs": "📖 وثائق المنصة", "logout": "🚪 تسجيل الخروج",
         "cse": "بورصة الدار البيضاء", "subtitle": "منصة التحليل المالي وأبحاث أسهم قطاع البناء والأشغال العمومية", "badge": "🇲🇦 تركيز على السوق المغربي",
-        "tracked": "الشركات المتابعة", "avg_pe": "متوسط مكرر الربحية", "top_stock": "أغلى سهم", "entities": "شركات",
+        "tracked": "الشركات المتابعة", "avg_pe": "متوسط مكرر الربحية", "prem_stock": "السهم الأغلى", "value_stock": "أفضل قيمة (أقل P/E)", "entities": "شركات",
         "nav": "🚀 وحدات التنقل السريع",
         "ca_title": "📉 تحليل الشركات", "ca_desc": "رفع نماذج الإكسل، تحليل التغيرات، واستخراج تقارير الاستثمار.",
         "bb_title": "⚖️ مقارنة القطاع", "bb_desc": "مقارنة هوامش التشغيل والسيولة والعائد على حقوق المساهمين مع المنافسين.",
@@ -103,6 +107,7 @@ t = {
         "mh_title": "🗄️ السجل الخاص بي", "mh_desc": "الوصول وإدارة وتنزيل جلسات التحليل المحفوظة مسبقًا.",
         "ac_title": "👤 عن المطور", "ac_desc": "الملف المهني والخلفية الأكاديمية وروابط التواصل.",
         "launch": "تشغيل الوحدة",
+        "recent_act": "⏱️ الجلسات الأخيرة", "view_hist": "عرض السجل الكامل", "no_recent": "لم يتم العثور على جلسات أخيرة.",
         # Docs Section
         "doc_head": "📖 المنهجية المالية ومواصفات النظام",
         "doc_wacc": "#### ⚙️ 1. تكلفة رأس المال (WACC و CAPM)",
@@ -131,6 +136,12 @@ except Exception as e:
 
 if "user" not in st.session_state: st.session_state.user = None
 
+def get_recent_history(user_id):
+    try:
+        res = supabase.table("users_history").select("id, created_at, work_data").eq("user_id", user_id).order("created_at", desc=True).limit(2).execute()
+        return res.data
+    except Exception: return []
+
 # ==========================================
 # 3. MODALS & UI COMPONENTS
 # ==========================================
@@ -140,12 +151,10 @@ def show_docs_modal():
     st.markdown(txt["doc_wacc"])
     st.write(txt["doc_wacc_desc"])
     st.latex(r"K_e = R_f + \beta \times (R_m - R_f)")
-    
     st.markdown("---")
     st.markdown(txt["doc_dcf"])
     st.write(txt["doc_dcf_desc"])
     st.latex(r"TV = \frac{FCF_5 \times (1 + g)}{WACC - g}")
-    
     st.markdown("---")
     st.markdown(txt["doc_lbo"])
     st.write(txt["doc_lbo_desc"])
@@ -178,12 +187,19 @@ st.markdown(f"""
     .banner-content {{ position: absolute; top: 50%; left: 40px; transform: translateY(-50%); z-index: 2; }}
     .moroccan-badge {{ display: inline-block; background: rgba(193,39,45,0.25); border: 1px solid #c1272d; padding: 6px 18px; border-radius: 25px; color: white; font-size: 0.9rem; margin-top: 15px; font-weight: bold; backdrop-filter: blur(4px); }}
     
+    /* 📈 Ticker Tape CSS */
+    .ticker-wrap {{ width: 100%; overflow: hidden; background-color: #0e1117; padding-left: 100%; box-sizing: content-box; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; }}
+    @keyframes ticker {{ 0% {{ transform: translate3d(0, 0, 0); }} 100% {{ transform: translate3d(-100%, 0, 0); }} }}
+    .ticker {{ display: inline-block; white-space: nowrap; padding-right: 100%; box-sizing: content-box; animation-iteration-count: infinite; animation-timing-function: linear; animation-name: ticker; animation-duration: 30s; }}
+    .ticker__item {{ display: inline-block; padding: 10px 2rem; font-size: 14px; color: #b3b3b3; font-weight: bold; }}
+    .ticker__val {{ color: #2ca02c; margin-left: 5px; }}
+
     /* Glassmorphism Stats Container */
     .overview-container {{ display: flex; justify-content: space-around; background: rgba(22, 26, 34, 0.6); backdrop-filter: blur(10px); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); border-top: 3px solid #c1272d; margin-bottom: 35px; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }}
     .overview-item {{ text-align: center; flex: 1; min-width: 200px; transition: transform 0.3s ease; }}
     .overview-item:hover {{ transform: translateY(-3px); }}
     .overview-label {{ margin: 0; color: #a0aab5; font-size: 15px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }}
-    .overview-value {{ margin: 0; color: white; font-size: 28px; font-weight: 800; text-shadow: 0 0 15px rgba(255,255,255,0.15); }}
+    .overview-value {{ margin: 0; color: white; font-size: 26px; font-weight: 800; text-shadow: 0 0 15px rgba(255,255,255,0.15); }}
     
     /* Interactive Navigation Cards */
     div[data-testid="stVerticalBlockBorderWrapper"]:has(h4) {{
@@ -197,6 +213,11 @@ st.markdown(f"""
         box-shadow: 0 12px 25px rgba(0,0,0,0.5);
         border-color: rgba(255,255,255,0.2) !important;
     }}
+    
+    /* Recent Activity Card */
+    .recent-card {{ background: rgba(255,255,255,0.03); border-left: 3px solid #ff7f0e; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }}
+    .recent-card h5 {{ margin: 0; color: #fff; font-size: 16px; }}
+    .recent-card p {{ margin: 0; color: #b3b3b3; font-size: 13px; }}
     
     /* Button Polish */
     .stButton>button {{ border-radius: 8px !important; transition: all 0.3s ease !important; font-weight: bold !important; }}
@@ -293,7 +314,6 @@ else:
             st.divider()
             st.markdown(txt['sys'])
             
-            # TRIGGER MODAL
             if st.button(txt['docs'], use_container_width=True): 
                 show_docs_modal()
                 
@@ -318,34 +338,63 @@ else:
     
     df_dash = get_dashboard_data()
     if df_dash is not None:
-        avg_pe = df_dash["PE_Ratio"].mean()
-        tracked_count = len(df_dash)
-        
-        # APPLY CURRENCY CONVERSION TO HOME PAGE
         rate = st.session_state.rates[st.session_state.currency]
         symbol = st.session_state.sym[st.session_state.currency]
         
-        top_stock_row = df_dash.loc[df_dash["Price_MAD"].idxmax()]
-        top_stock_name = top_stock_row["Company"]
-        top_stock_val = top_stock_row["Price_MAD"] * rate
+        # Build Live Ticker
+        ticker_items = "".join([f"<div class='ticker__item'>{row['Company']}: <span class='ticker__val'>{row['Price_MAD'] * rate:,.2f} {symbol}</span></div>" for _, row in df_dash.iterrows()])
+        st.markdown(f"<div class='ticker-wrap' {'dir=\"ltr\"'}><div class='ticker'>{ticker_items}</div></div>", unsafe_allow_html=True)
+        
+        # Calculate Smart Stats
+        avg_pe = df_dash["PE_Ratio"].mean()
+        
+        prem_stock_row = df_dash.loc[df_dash["Price_MAD"].idxmax()]
+        prem_stock_name = prem_stock_row["Company"]
+        prem_stock_val = prem_stock_row["Price_MAD"] * rate
+        
+        value_stock_row = df_dash.loc[df_dash["PE_Ratio"].idxmin()]
+        value_stock_name = value_stock_row["Company"]
+        value_stock_pe = value_stock_row["PE_Ratio"]
         
         st.markdown(f"""
         <div class="overview-container" {'dir="rtl"' if lang=="العربية" else ''}>
-            <div class="overview-item">
-                <p class="overview-label">{txt['tracked']}</p>
-                <p class="overview-value">{tracked_count} {txt['entities']}</p>
-            </div>
             <div class="overview-item">
                 <p class="overview-label">{txt['avg_pe']}</p>
                 <p class="overview-value">{avg_pe:.1f}x</p>
             </div>
             <div class="overview-item">
-                <p class="overview-label">{txt['top_stock']}</p>
-                <p class="overview-value">{top_stock_name} <span style="font-size:16px; color:#2ca02c;">({top_stock_val:,.2f} {symbol})</span></p>
+                <p class="overview-label">{txt['prem_stock']}</p>
+                <p class="overview-value">{prem_stock_name} <span style="font-size:16px; color:#2ca02c;">({prem_stock_val:,.2f} {symbol})</span></p>
+            </div>
+            <div class="overview-item">
+                <p class="overview-label">{txt['value_stock']}</p>
+                <p class="overview-value">{value_stock_name} <span style="font-size:16px; color:#1f77b4;">({value_stock_pe:.1f}x)</span></p>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
+    # --- RECENT ACTIVITY SECTION ---
+    recent_sessions = get_recent_history(st.session_state.user.id)
+    if recent_sessions:
+        st.markdown(f"### {txt['recent_act']}")
+        c_hist1, c_hist2 = st.columns([3, 1])
+        with c_hist1:
+            for item in recent_sessions:
+                data = json.loads(item['work_data'])
+                s_name = data.get('Session_Name', f"Session: {item['created_at'][:10]}")
+                s_date = data.get('Date', item['created_at'][:10])
+                st.markdown(f"""
+                <div class="recent-card" {'dir="rtl"' if lang=="العربية" else ''}>
+                    <div><h5>{s_name}</h5><p>{s_date}</p></div>
+                    <div><span style="color:#2ca02c; font-weight:bold;">{data.get('Revenue', 0) * st.session_state.rates[st.session_state.currency]:,.0f} {st.session_state.sym[st.session_state.currency]}</span></div>
+                </div>
+                """, unsafe_allow_html=True)
+        with c_hist2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button(txt['view_hist'], use_container_width=True): st.switch_page("pages/6_My_History.py")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- NAVIGATION MODULES ---
     st.markdown(f"### {txt['nav']}")
     st.markdown("<br>", unsafe_allow_html=True)
     
