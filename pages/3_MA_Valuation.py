@@ -41,7 +41,11 @@ t = {
         "lbo_title": "💰 LBO Quick-Modeler",
         "entry_m": "Entry Multiple (x)", "exit_m": "Exit Multiple (x)", "debt_f": "Debt Funding %",
         "pe_metrics": "Private Equity Metrics (5-Year)", "irr": "IRR", "moic": "MoIC",
-        "sens_hm": "📊 EV Sensitivity (WACC vs Terminal Growth)", "dl_val_xlsx": "📥 Export Valuation Model (Excel + Charts)"
+        "sens_hm": "📊 EV Sensitivity (WACC vs Terminal Growth)", "dl_val_xlsx": "📥 Export Valuation Model (Excel + Charts)",
+        # Sidebar Tools
+        "sb_tools": "🛠️ Analyst Tools", "fx_title": "🌍 FX Rates (Base MAD)", "calc_title": "🧮 Quick CAGR Calc",
+        "pv": "Present Value", "fv": "Future Value", "yrs": "Years", "cagr_res": "CAGR:", 
+        "scratch_title": "📝 Scratchpad", "scratch_ph": "Jot down your deal notes here..."
     },
     "Français": {
         "title": "💼 Salle des Marchés M&A & Private Equity",
@@ -65,7 +69,11 @@ t = {
         "lbo_title": "💰 Modélisateur LBO Rapide",
         "entry_m": "Multiple d'Entrée (x)", "exit_m": "Multiple de Sortie (x)", "debt_f": "Financement par Dette %",
         "pe_metrics": "Métriques Private Equity (Horizon 5 ans)", "irr": "TRI (IRR)", "moic": "Multiple (MoIC)",
-        "sens_hm": "📊 Sensibilité de la VE (WACC vs Croissance)", "dl_val_xlsx": "📥 Exporter le Modèle de Valorisation"
+        "sens_hm": "📊 Sensibilité de la VE (WACC vs Croissance)", "dl_val_xlsx": "📥 Exporter le Modèle de Valorisation",
+        # Sidebar Tools
+        "sb_tools": "🛠️ Outils de l'Analyste", "fx_title": "🌍 Taux de Change", "calc_title": "🧮 Calculateur CAGR",
+        "pv": "Valeur Actuelle", "fv": "Valeur Future", "yrs": "Années", "cagr_res": "TCAM :", 
+        "scratch_title": "📝 Bloc-notes", "scratch_ph": "Prenez vos notes ici..."
     },
     "Español": {
         "title": "💼 Sala de Fusiones y Capital Privado (M&A)",
@@ -89,7 +97,11 @@ t = {
         "lbo_title": "💰 Modelador LBO Rápido",
         "entry_m": "Múltiplo de Entrada (x)", "exit_m": "Múltiplo de Salida (x)", "debt_f": "Financiamiento de Deuda %",
         "pe_metrics": "Métricas PE (Horizonte 5 años)", "irr": "TIR (IRR)", "moic": "Múltiplo (MoIC)",
-        "sens_hm": "📊 Sensibilidad del EV (WACC vs Crecimiento)", "dl_val_xlsx": "📥 Exportar Modelo de Valoración"
+        "sens_hm": "📊 Sensibilidad del EV (WACC vs Crecimiento)", "dl_val_xlsx": "📥 Exportar Modelo de Valoración",
+        # Sidebar Tools
+        "sb_tools": "🛠️ Herramientas de Análisis", "fx_title": "🌍 Tipos de Cambio", "calc_title": "🧮 Calculadora CAGR",
+        "pv": "Valor Presente", "fv": "Valor Futuro", "yrs": "Años", "cagr_res": "CAGR:", 
+        "scratch_title": "📝 Bloc de Notas", "scratch_ph": "Tome sus notas aquí..."
     },
     "العربية": {
         "title": "💼 غرفة صفقات الاندماج والاستحواذ (M&A)",
@@ -113,7 +125,11 @@ t = {
         "lbo_title": "💰 نموذج الاستحواذ المدعوم بالقروض (LBO)",
         "entry_m": "مضاعف الدخول (x)", "exit_m": "مضاعف التخارج (x)", "debt_f": "نسبة تمويل الديون %",
         "pe_metrics": "مقاييس الأسهم الخاصة (أفق 5 سنوات)", "irr": "معدل العائد الداخلي (IRR)", "moic": "مضاعف رأس المال (MoIC)",
-        "sens_hm": "📊 تحليل الحساسية (WACC مقابل النمو)", "dl_val_xlsx": "📥 تصدير نموذج التقييم المتقدم (Excel)"
+        "sens_hm": "📊 تحليل الحساسية (WACC مقابل النمو)", "dl_val_xlsx": "📥 تصدير نموذج التقييم المتقدم (Excel)",
+        # Sidebar Tools
+        "sb_tools": "🛠️ أدوات المحلل السريعة", "fx_title": "🌍 أسعار الصرف", "calc_title": "🧮 حاسبة النمو (CAGR)",
+        "pv": "القيمة الحالية", "fv": "القيمة المستقبلية", "yrs": "السنوات", "cagr_res": "معدل النمو (CAGR):", 
+        "scratch_title": "📝 مذكرة الملاحظات", "scratch_ph": "دون ملاحظاتك السريعة هنا..."
     }
 }
 txt = t[lang]
@@ -156,6 +172,31 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
+# --- SIDEBAR TOOLS (QUICK ANALYST WIDGETS) ---
+with st.sidebar:
+    st.markdown("---")
+    st.markdown(f"<h3 style='color: #9467bd;'>{txt['sb_tools']}</h3>", unsafe_allow_html=True)
+    
+    # Tool 1: Live FX Rates
+    with st.expander(txt['fx_title'], expanded=True):
+        usd_mad = 1 / st.session_state.rates.get("USD", 0.10)
+        eur_mad = 1 / st.session_state.rates.get("EUR", 0.09)
+        st.markdown(f"🇺🇸 **1 USD** = `{usd_mad:.2f} MAD`")
+        st.markdown(f"🇪🇺 **1 EUR** = `{eur_mad:.2f} MAD`")
+        
+    # Tool 2: CAGR Calculator
+    with st.expander(txt['calc_title'], expanded=False):
+        pv = st.number_input(txt['pv'], value=1000.0, step=100.0)
+        fv = st.number_input(txt['fv'], value=1500.0, step=100.0)
+        yrs = st.number_input(txt['yrs'], value=5, min_value=1)
+        if pv > 0 and yrs > 0:
+            cagr = ((fv / pv) ** (1 / yrs) - 1) * 100
+            st.success(f"**{txt['cagr_res']}** {cagr:.2f}%")
+            
+    # Tool 3: Scratchpad
+    with st.expander(txt['scratch_title'], expanded=False):
+        st.text_area("", placeholder=txt['scratch_ph'], height=150, label_visibility="collapsed")
+
 # --- BANNER ---
 st.markdown(f"""
 <div class="full-width-banner">
@@ -171,7 +212,7 @@ with st.expander(txt["glos_title"]):
     st.markdown(txt["glos_mc"])
     st.markdown(txt["glos_moic"])
 
-# --- 1. MAIN PAGE INPUTS (Native Streamlit Container - Fixes the HTML Bug) ---
+# --- 1. MAIN PAGE INPUTS ---
 with st.container(border=True):
     st.markdown(f"### {txt['sb_title']}")
     st.info(txt["sb_info"])
@@ -289,7 +330,6 @@ st.markdown("---")
 # --- 4. DCF SENSITIVITY HEATMAP ---
 st.subheader(txt["sens_hm"])
 
-# Ranges adjusted so WACC is ALWAYS strictly greater than Terminal Growth
 wacc_range_dcf = np.linspace(max(0.06, wacc - 0.02), max(0.10, wacc + 0.02), 7)
 tg_range_dcf = np.linspace(max(0.01, tg - 0.01), min(0.05, tg + 0.01), 7)
 
@@ -305,7 +345,6 @@ for w in wacc_range_dcf:
         row_ev.append(ev_matrix * rate)
     z_data_dcf.append(row_ev)
 
-# Native smooth color scale 'RdYlGn'
 fig_heat_dcf = go.Figure(data=go.Heatmap(
     z=z_data_dcf, 
     x=np.round(tg_range_dcf*100, 2), 
