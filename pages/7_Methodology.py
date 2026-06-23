@@ -144,4 +144,4 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # --- SECTION 4: COMPS ---
 st.markdown(f"<div class='meth-box' {'dir=\"rtl\"' if lang=='العربية' else ''}><h3>{txt['comps_title']}</h3><p>{txt['comps_desc']}</p></div>", unsafe_allow_html=True)
-st.latex(r"EV = \text{Market Cap} + \text{Total Debt} - \text{Cash & Equivalents}")
+st.latex(r"EV = \text{Market Cap} + \text{Total Debt} - \text{Cash \& Equivalents}")
