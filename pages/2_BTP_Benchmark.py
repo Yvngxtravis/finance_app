@@ -6,7 +6,8 @@ import numpy as np
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
-import time  # Added for the anti-ban delay
+import time
+import urllib.parse
 
 # --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
@@ -118,9 +119,9 @@ with col_clear2:
         st.cache_data.clear()
         st.rerun()
 
-# --- BULLETPROOF LIVE MARKET ENGINE (Anti-Ban Sequential Fetch) ---
+# --- BULLETPROOF LIVE MARKET ENGINE (4-Layer Anti-Ban System) ---
 @st.cache_data(ttl=300, show_spinner=False)
-def fetch_live_market_data_v3():
+def fetch_live_market_data_v4():
     targets = {
         "LafargeHolcim": {"yf": "LHM.CM", "gf": "LHM:CMA"},
         "Addoha": {"yf": "ADH.CM", "gf": "ADH:CMA"},
@@ -132,40 +133,65 @@ def fetch_live_market_data_v3():
         "Colorado": {"yf": "COL.CM", "gf": "COL:CMA"}
     }
     
-    stealth_headers = {
+    headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     }
 
-    def fetch_price(name, tkrs):
-        # Layer 1: Direct Google Finance Scraping (Most reliable for CMA)
+    def get_single_price(name, tkrs):
+        # LAYER 1: YFinance Fast Info
         try:
-            url = f"https://www.google.com/finance/quote/{tkrs['gf']}?hl=en"
-            res = requests.get(url, headers=stealth_headers, timeout=5)
+            stock = yf.Ticker(tkrs["yf"])
+            val = stock.fast_info.get('lastPrice')
+            if val is not None and val > 0:
+                return {"Company": name, "Price_MAD": float(val), "Data_Status": "🟢 LIVE (YF)"}
+        except: pass
+
+        # LAYER 2: YFinance History
+        try:
+            stock = yf.Ticker(tkrs["yf"])
+            hist = stock.history(period="1d", timeout=3)
+            if not hist.empty and 'Close' in hist.columns:
+                val = float(hist['Close'].iloc[-1])
+                if val > 0:
+                    return {"Company": name, "Price_MAD": val, "Data_Status": "🟢 LIVE (YF)"}
+        except: pass
+
+        # LAYER 3: Google Finance Direct Scraping
+        gf_url = f"https://www.google.com/finance/quote/{tkrs['gf']}?hl=en"
+        try:
+            res = requests.get(gf_url, headers=headers, timeout=4)
             if res.status_code == 200:
                 soup = BeautifulSoup(res.text, 'html.parser')
                 price_div = soup.find("div", class_="YMlKec fxKbKc")
                 if price_div:
-                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").strip()
-                    return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (GF)"}
+                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").replace("\xa0", "").strip()
+                    if float(clean_price) > 0:
+                        return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (GF)"}
         except: pass
 
-        # Layer 2: Yfinance Library using fast_info (Bypasses some recent YF blocks)
+        # LAYER 4: Google Finance via Proxy (Bypasses IP Blocks completely)
         try:
-            stock = yf.Ticker(tkrs["yf"])
-            price = stock.fast_info.get('lastPrice')
-            if price is not None and price > 0:
-                return {"Company": name, "Price_MAD": float(price), "Data_Status": "🟢 LIVE (YF)"}
+            proxy_url = f"https://api.allorigins.win/get?url={urllib.parse.quote(gf_url)}"
+            res = requests.get(proxy_url, timeout=8)
+            if res.status_code == 200:
+                html = res.json().get('contents', '')
+                soup = BeautifulSoup(html, 'html.parser')
+                price_div = soup.find("div", class_="YMlKec fxKbKc")
+                if price_div:
+                    clean_price = price_div.text.replace("MAD", "").replace(",", "").replace(" ", "").replace("\xa0", "").strip()
+                    if float(clean_price) > 0:
+                        return {"Company": name, "Price_MAD": float(clean_price), "Data_Status": "🟢 LIVE (Proxy)"}
         except: pass
 
         return {"Company": name, "Price_MAD": None, "Data_Status": "🔴 Fallback"}
 
-    # Process sequentially with a tiny sleep to avoid Google 429 Too Many Requests
+    # Process sequentially with a delay to completely avoid anti-bot flags
     data_list = []
     for name, tkrs in targets.items():
-        data_list.append(fetch_price(name, tkrs))
-        time.sleep(0.3)  # Anti-bot delay
+        data_list.append(get_single_price(name, tkrs))
+        time.sleep(0.4) # Crucial Anti-Ban Delay
         
     df_live = pd.DataFrame(data_list)
     
@@ -206,7 +232,7 @@ def fetch_live_market_data_v3():
     return pd.DataFrame(final_data)
 
 with st.spinner("🔄 Fetching Live Market Data (Anti-Bot Bypass)..."):
-    df_live = fetch_live_market_data_v3().copy()
+    df_live = fetch_live_market_data_v4().copy()
     df_live["Type"] = txt["market_peer"]
     # Apply currency rate
     df_live["Price_Converted"] = df_live["Price_MAD"] * rate
