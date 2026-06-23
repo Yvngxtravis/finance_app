@@ -36,6 +36,7 @@ t = {
         "ac_title": "👤 About Creator", "ac_desc": "Professional profile, academic background, and networking links.",
         "launch": "Launch Module",
         "recent_act": "⏱️ Recent Sessions", "view_hist": "View Full History", "no_recent": "No recent sessions found.",
+        "guest_btn": "🚀 Continue as Guest",
         # Docs Section
         "doc_head": "📖 Financial Methodology & Engine Specs",
         "doc_wacc": "#### ⚙️ 1. Cost of Capital (WACC & CAPM)",
@@ -60,6 +61,7 @@ t = {
         "ac_title": "👤 À propos du Créateur", "ac_desc": "Profil professionnel, parcours académique et liens de networking.",
         "launch": "Lancer le Module",
         "recent_act": "⏱️ Sessions Récentes", "view_hist": "Voir l'historique complet", "no_recent": "Aucune session récente trouvée.",
+        "guest_btn": "🚀 Continuer en tant qu'invité",
         # Docs Section
         "doc_head": "📖 Méthodologie Financière et Spécifications",
         "doc_wacc": "#### ⚙️ 1. Coût du Capital (CMPC & MEDAF)",
@@ -84,6 +86,7 @@ t = {
         "ac_title": "👤 Sobre el Creador", "ac_desc": "Perfil profesional, formación académica y enlaces de networking.",
         "launch": "Iniciar Módulo",
         "recent_act": "⏱️ Sesiones Recientes", "view_hist": "Ver historial completo", "no_recent": "No se encontraron sesiones recientes.",
+        "guest_btn": "🚀 Continuar como Invitado",
         # Docs Section
         "doc_head": "📖 Metodología Financiera y Especificaciones",
         "doc_wacc": "#### ⚙️ 1. Costo de Capital (WACC y CAPM)",
@@ -108,6 +111,7 @@ t = {
         "ac_title": "👤 عن المطور", "ac_desc": "الملف المهني والخلفية الأكاديمية وروابط التواصل.",
         "launch": "تشغيل الوحدة",
         "recent_act": "⏱️ الجلسات الأخيرة", "view_hist": "عرض السجل الكامل", "no_recent": "لم يتم العثور على جلسات أخيرة.",
+        "guest_btn": "🚀 المتابعة كضيف",
         # Docs Section
         "doc_head": "📖 المنهجية المالية ومواصفات النظام",
         "doc_wacc": "#### ⚙️ 1. تكلفة رأس المال (WACC و CAPM)",
@@ -285,6 +289,13 @@ if st.session_state.user is None:
                         supabase.auth.sign_up({"email": email, "password": password})
                         st.success("Account created successfully! Switch to Login.")
                     except Exception as e: st.error(f"Sign Up Error: {str(e)}")
+            
+            # --- NEW GUEST BUTTON SECTION ---
+            st.markdown("<div style='text-align:center; color:#b3b3b3; margin: 15px 0;'>— OR —</div>", unsafe_allow_html=True)
+            if st.button(txt['guest_btn'], use_container_width=True):
+                # Creating a dummy Guest user session
+                st.session_state.user = type('Guest', (), {'email': 'guest@portfolio.com', 'id': 'guest_123'})()
+                st.rerun()
 
 else:
     # --- HEADER & SETTINGS ---
@@ -318,7 +329,8 @@ else:
                 show_docs_modal()
                 
             if st.button(txt['logout'], type="primary", use_container_width=True):
-                supabase.auth.sign_out()
+                if st.session_state.user.email != 'guest@portfolio.com':
+                    supabase.auth.sign_out()
                 st.session_state.user = None
                 st.rerun()
                 
@@ -374,25 +386,26 @@ else:
         """, unsafe_allow_html=True)
     
     # --- RECENT ACTIVITY SECTION ---
-    recent_sessions = get_recent_history(st.session_state.user.id)
-    if recent_sessions:
-        st.markdown(f"### {txt['recent_act']}")
-        c_hist1, c_hist2 = st.columns([3, 1])
-        with c_hist1:
-            for item in recent_sessions:
-                data = json.loads(item['work_data'])
-                s_name = data.get('Session_Name', f"Session: {item['created_at'][:10]}")
-                s_date = data.get('Date', item['created_at'][:10])
-                st.markdown(f"""
-                <div class="recent-card" {'dir="rtl"' if lang=="العربية" else ''}>
-                    <div><h5>{s_name}</h5><p>{s_date}</p></div>
-                    <div><span style="color:#2ca02c; font-weight:bold;">{data.get('Revenue', 0) * st.session_state.rates[st.session_state.currency]:,.0f} {st.session_state.sym[st.session_state.currency]}</span></div>
-                </div>
-                """, unsafe_allow_html=True)
-        with c_hist2:
+    if st.session_state.user.email != 'guest@portfolio.com':
+        recent_sessions = get_recent_history(st.session_state.user.id)
+        if recent_sessions:
+            st.markdown(f"### {txt['recent_act']}")
+            c_hist1, c_hist2 = st.columns([3, 1])
+            with c_hist1:
+                for item in recent_sessions:
+                    data = json.loads(item['work_data'])
+                    s_name = data.get('Session_Name', f"Session: {item['created_at'][:10]}")
+                    s_date = data.get('Date', item['created_at'][:10])
+                    st.markdown(f"""
+                    <div class="recent-card" {'dir="rtl"' if lang=="العربية" else ''}>
+                        <div><h5>{s_name}</h5><p>{s_date}</p></div>
+                        <div><span style="color:#2ca02c; font-weight:bold;">{data.get('Revenue', 0) * st.session_state.rates[st.session_state.currency]:,.0f} {st.session_state.sym[st.session_state.currency]}</span></div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            with c_hist2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button(txt['view_hist'], use_container_width=True): st.switch_page("pages/6_My_History.py")
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button(txt['view_hist'], use_container_width=True): st.switch_page("pages/6_My_History.py")
-        st.markdown("<br>", unsafe_allow_html=True)
 
     # --- NAVIGATION MODULES ---
     st.markdown(f"### {txt['nav']}")
