@@ -14,13 +14,14 @@ syms = st.session_state.get("sym", {"MAD": "MAD", "USD": "$", "EUR": "€"})
 rate = rates[curr]
 sym = syms[curr]
 
+# --- TRANSLATION DICTIONARY ---
 t = {
     "English": {
         "banner_h": "👤 Executive Profile", "banner_desc": "Corporate Finance, Financial Modeling, and M&A/PE Advisory Desk.",
         "name": "Zakaria Elaidi",
         "sub_name": "Financial Analyst & M&A / Private Equity Specialist",
-        "desc1": "Currently pursuing a Master's degree in Finance (Programme Grande École) at **ENCG El Jadida**, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.",
-        "desc2": "With a strategic focus on targeting roles in **M&A, Investment Banking, and Private Equity**, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).",
+        "desc1": "Currently pursuing a Master's degree in Finance (Programme Grande École) at <strong>ENCG El Jadida</strong>, Zakaria specializes in advanced financial analysis, corporate finance, and investment valuation.",
+        "desc2": "With a strategic focus on targeting roles in <strong>M&A, Investment Banking, and Private Equity</strong>, he bridges the gap between traditional equity research and modern data science tools (Python, Pandas, SQL).",
         "bg_title": "🚀 Professional Track Record",
         "exp1_title": "Consulting Expertise:", "exp1_desc": "Successfully delivered over 150 financial modeling and analysis projects globally as a freelance consultant.",
         "exp2_title": "Corporate Exposure:", "exp2_desc": "Completed the rigorous KPMG UK Audit Job Simulation and completed comprehensive Investment Risk Management training.",
@@ -33,8 +34,8 @@ t = {
         "banner_h": "👤 Profil Exécutif", "banner_desc": "Finance d'Entreprise, Modélisation Financière et Bureau de Conseil M&A/PE.",
         "name": "Zakaria Elaidi",
         "sub_name": "Analyste Financier & Spécialiste M&A / Private Equity",
-        "desc1": "Actuellement en Master Finance (Programme Grande École) à **l'ENCG El Jadida**, Zakaria est spécialisé dans l'analyse financière avancée, la finance d'entreprise et la valorisation des investissements.",
-        "desc2": "Avec un objectif stratégique ciblant les rôles en **M&A, Banque d'Investissement et Private Equity**, il fait le pont entre la recherche en actions traditionnelle et les outils modernes de Data Science (Python, Pandas, SQL).",
+        "desc1": "Actuellement en Master Finance (Programme Grande École) à <strong>l'ENCG El Jadida</strong>, Zakaria est spécialisé dans l'analyse financière avancée, la finance d'entreprise et la valorisation des investissements.",
+        "desc2": "Avec un objectif stratégique ciblant les rôles en <strong>M&A, Banque d'Investissement et Private Equity</strong>, il fait le pont entre la recherche en actions traditionnelle et les outils modernes de Data Science (Python, Pandas, SQL).",
         "bg_title": "🚀 Parcours & Réalisations",
         "exp1_title": "Expertise en Conseil :", "exp1_desc": "A livré avec succès plus de 150 projets de modélisation et d'analyse financière à l'échelle mondiale en tant que consultant indépendant.",
         "exp2_title": "Exposition en Entreprise :", "exp2_desc": "A complété la rigoureuse simulation de poste en audit chez KPMG UK et une formation approfondie en gestion des risques d'investissement.",
@@ -47,8 +48,8 @@ t = {
         "banner_h": "👤 Perfil Ejecutivo", "banner_desc": "Finanzas Corporativas, Modelado Financiero y Asesoría en M&A/PE.",
         "name": "Zakaria Elaidi",
         "sub_name": "Analista Financiero y Especialista en M&A / Private Equity",
-        "desc1": "Actualmente cursando un Máster en Finanzas (Programme Grande École) en **ENCG El Jadida**, Zakaria se especializa en análisis financiero avanzado, finanzas corporativas y valoración de inversiones.",
-        "desc2": "Con un enfoque estratégico en roles de **M&A, Banca de Inversión y Capital Privado (Private Equity)**, une la investigación tradicional de acciones con herramientas modernas de ciencia de datos (Python, Pandas, SQL).",
+        "desc1": "Actualmente cursando un Máster en Finanzas (Programme Grande École) en <strong>ENCG El Jadida</strong>, Zakaria se especializa en análisis financiero avanzado, finanzas corporativas y valoración de inversiones.",
+        "desc2": "Con un enfoque estratégico en roles de <strong>M&A, Banca de Inversión y Capital Privado (Private Equity)</strong>, une la investigación tradicional de acciones con herramientas modernas de ciencia de datos (Python, Pandas, SQL).",
         "bg_title": "🚀 Trayectoria Profesional",
         "exp1_title": "Experiencia en Consultoría:", "exp1_desc": "Entregó con éxito más de 150 proyectos de modelado y análisis financiero a nivel global como consultor independiente.",
         "exp2_title": "Exposición Corporativa:", "exp2_desc": "Completó la rigurosa simulación de auditoría de KPMG UK y formación integral en gestión de riesgos de inversión.",
@@ -61,8 +62,8 @@ t = {
         "banner_h": "👤 الملف المهني والتنفيذي", "banner_desc": "تمويل الشركات، النمذجة المالية، ومكتب استشارات الاندماج والاستحواذ والأسهم الخاصة.",
         "name": "زكرياء العيدي",
         "sub_name": "محلل مالي ومتخصص في الاندماج والاستحواذ (M&A) والأسهم الخاصة (PE)",
-        "desc1": "يتابع حالياً دراسة الماستر في تخصص المالية (برنامج المدارس الوطنية للتجارة والتسيير) بـ **ENCG الجديدة**، وهو متخصص في التحليل المالي المتقدم، تمويل الشركات، وتقييم الاستثمارات.",
-        "desc2": "مع تركيز استراتيجي على شغل مناصب في **عمليات الاندماج والاستحواذ (M&A)، البنوك الاستثمارية، والأسهم الخاصة**، يجمع بين أبحاث الأسهم التقليدية وأدوات علوم البيانات الحديثة (Python, Pandas, SQL).",
+        "desc1": "يتابع حالياً دراسة الماستر في تخصص المالية (برنامج المدارس الوطنية للتجارة والتسيير) بـ <strong>ENCG الجديدة</strong>، وهو متخصص في التحليل المالي المتقدم، تمويل الشركات، وتقييم الاستثمارات.",
+        "desc2": "مع تركيز استراتيجي على شغل مناصب في <strong>عمليات الاندماج والاستحواذ (M&A)، البنوك الاستثمارية، والأسهم الخاصة</strong>، يجمع بين أبحاث الأسهم التقليدية وأدوات علوم البيانات الحديثة (Python, Pandas, SQL).",
         "bg_title": "🚀 سجل الإنجازات المهنية",
         "exp1_title": "الخبرة الاستشارية:", "exp1_desc": "أنجز بنجاح أكثر من 150 مشروعاً في النمذجة والتحليل المالي على مستوى العالم كمستشار مستقل.",
         "exp2_title": "الخبرة في الشركات:", "exp2_desc": "أكمل بنجاح المحاكاة الوظيفية للتدقيق في KPMG UK وحاصل على تدريب متقدم في إدارة مخاطر الاستثمار.",
