@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 
-# --- SECURITY ---
 if "user" not in st.session_state or st.session_state.user is None:
     st.switch_page("app.py")
 
-# --- GLOBAL STATE INITIALIZATION ---
 lang = st.session_state.get("lang", "English")
 curr = st.session_state.get("currency", "MAD")
 rates = st.session_state.get("rates", {"MAD": 1.0, "USD": 0.10, "EUR": 0.09})
@@ -15,7 +14,6 @@ syms = st.session_state.get("sym", {"MAD": "MAD", "USD": "$", "EUR": "€"})
 rate = rates[curr]
 sym = syms[curr]
 
-# --- TRANSLATION DICTIONARY ---
 t = {
     "English": {
         "banner_h": "👤 Executive Profile", "banner_desc": "Corporate Finance, Financial Modeling, and M&A/PE Advisory Desk.",
@@ -76,7 +74,6 @@ t = {
 }
 txt = t[lang]
 
-# --- UI STYLING & CSS HACKS ---
 rtl_css = ""
 if lang == "العربية":
     rtl_css = """
@@ -89,7 +86,6 @@ st.markdown(f"""
     [data-testid="stSidebarNav"] li:first-child a span {{ display: none !important; }}
     [data-testid="stSidebarNav"] li:first-child a::after {{ content: "🏠 Home"; font-size: 15px; margin-left: 0px; }}
     
-    /* About Me Banner Styling (Charcoal / Platinum Slate Theme) */
     .full-width-banner {{ position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; margin-bottom: 25px; border-radius: 10px; border-left: 5px solid #495057; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }}
     .banner-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0.7) 50%, rgba(73,80,87,0.3) 100%); }}
     .banner-content {{ position: absolute; top: 50%; left: 30px; transform: translateY(-50%); z-index: 2; }}
@@ -98,11 +94,10 @@ st.markdown(f"""
     .btn-linkedin {{ background-color: #0077b5; color: white !important; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: block; margin-top: 20px; transition: 0.3s; text-align: center; }}
     .btn-linkedin:hover {{ background-color: #005582; text-decoration: none; }}
     
+    .intro-box {{ background-color: rgba(255, 255, 255, 0.03); padding: 20px 25px; border-radius: 8px; border-left: 4px solid #0077b5; margin-bottom: 25px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }}
+    
     {rtl_css}
     
-    /* =========================================
-       📱 MOBILE RESPONSIVENESS (SMART SCREENS)
-       ========================================= */
     @media (max-width: 768px) {{
         .block-container {{ padding-top: 2rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
         [data-testid="stDataFrame"] {{ overflow-x: auto !important; max-width: 100% !important; }}
@@ -114,7 +109,6 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- BANNER ---
 st.markdown(f"""
 <div class="full-width-banner">
     <div class="banner-overlay"></div>
@@ -125,14 +119,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PAGE CONTENT ---
 col_text, col_network = st.columns([2, 1], gap="large")
 
 with col_text:
     st.markdown(f"## {txt['name']}")
     st.markdown(f"#### *{txt['sub_name']}*")
-    st.write(txt["desc1"])
-    st.write(txt["desc2"])
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div class="intro-box" {'dir="rtl"' if lang=="العربية" else ''}>
+        <p style="color:#e0e0e0; font-size: 1.05rem; line-height: 1.6; margin-bottom: 15px;">{txt['desc1']}</p>
+        <p style="color:#e0e0e0; font-size: 1.05rem; line-height: 1.6; margin-bottom: 0;">{txt['desc2']}</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(f"### {txt['bg_title']}")
@@ -151,12 +150,17 @@ with col_network:
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Placeholder byte data to prevent empty file download crashes
-    mock_cv_data = b"Zakaria Elaidi - Executive CV Placeholder Data"
+    cv_file_name = "Zakaria_Elaidi_CV.pdf"
+    if os.path.exists(cv_file_name):
+        with open(cv_file_name, "rb") as f:
+            cv_data = f.read()
+    else:
+        cv_data = b""
+
     st.download_button(
         label=txt["cv_btn"],
-        data=mock_cv_data,
-        file_name="Zakaria_Elaidi_Executive_CV.pdf",
+        data=cv_data,
+        file_name="Zakaria_Elaidi_CV.pdf",
         mime="application/pdf",
         use_container_width=True
     )
