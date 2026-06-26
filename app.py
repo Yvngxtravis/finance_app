@@ -28,7 +28,7 @@ t = {
         "welcome": "👋 Welcome back,", "settings": "⚙️ Settings & Profile", "profile": "**User Profile**", "pref": "**Preferences**",
         "curr_lbl": "Default Currency", "lang_lbl": "Platform Language", "docs": "📖 Platform Docs", "logout": "🚪 Terminate Session",
         "cse": "Casablanca Stock Exchange", "subtitle": "BTP Sector Equity Research & Financial Analytics Hub", "badge": "🇲🇦 Moroccan Market Focus",
-        "dev_by": "👨‍💻 Developed by **Zakaria Elaidi**",
+        "dev_by": "👨‍💻 Engineered by",
         "tracked": "Tracked Companies", "avg_pe": "Sector Average P/E", "prem_stock": "Premium Stock", "value_stock": "Value Stock (Lowest P/E)", "entities": "Entities",
         "nav": "🚀 Quick Navigation Modules",
         "ca_title": "📉 Corporate Analysis", "ca_desc": "Upload Excel models, run variance analysis, and generate investment teasers.",
@@ -57,7 +57,7 @@ t = {
         "welcome": "👋 Bon retour,", "settings": "⚙️ Paramètres & Profil", "profile": "**Profil Utilisateur**", "pref": "**Préférences**",
         "curr_lbl": "Devise par défaut", "lang_lbl": "Langue de la plateforme", "docs": "📖 Documentation", "logout": "🚪 Déconnexion",
         "cse": "Bourse de Casablanca", "subtitle": "Plateforme d'Analyse Financière et Recherche BTP", "badge": "🇲🇦 Focus Marché Marocain",
-        "dev_by": "👨‍💻 Développé par **Zakaria Elaidi**",
+        "dev_by": "👨‍💻 Conçu par",
         "tracked": "Entreprises Suivies", "avg_pe": "P/E Moyen", "prem_stock": "Action Premium", "value_stock": "Action de Valeur (P/E bas)", "entities": "Entités",
         "nav": "🚀 Modules de Navigation Rapide",
         "ca_title": "📉 Analyse d'Entreprise", "ca_desc": "Importez des modèles Excel, analysez les écarts et générez des teasers.",
@@ -86,7 +86,7 @@ t = {
         "welcome": "👋 Bienvenido de nuevo,", "settings": "⚙️ Ajustes y Perfil", "profile": "**Perfil de Usuario**", "pref": "**Preferencias**",
         "curr_lbl": "Moneda predeterminada", "lang_lbl": "Idioma de la plataforma", "docs": "📖 Documentación", "logout": "🚪 Cerrar Sesión",
         "cse": "Bolsa de Casablanca", "subtitle": "Centro de Análisis Financiero de Renta Variable BTP", "badge": "🇲🇦 Enfoque Mercado Marroquí",
-        "dev_by": "👨‍💻 Desarrollado por **Zakaria Elaidi**",
+        "dev_by": "👨‍💻 Desarrollado por",
         "tracked": "Empresas Seguidas", "avg_pe": "P/E Promedio", "prem_stock": "Acción Premium", "value_stock": "Acción de Valor (P/E bajo)", "entities": "Entidades",
         "nav": "🚀 Módulos de Navegación Rápida",
         "ca_title": "📉 Análisis Corporativo", "ca_desc": "Sube modelos Excel, analiza variaciones y genera informes de inversión.",
@@ -115,7 +115,7 @@ t = {
         "welcome": "👋 مرحباً بعودتك،", "settings": "⚙️ الإعدادات والملف الشخصي", "profile": "**الملف الشخصي**", "pref": "**التفضيلات**",
         "curr_lbl": "العملة الافتراضية", "lang_lbl": "لغة المنصة", "docs": "📖 وثائق المنصة", "logout": "🚪 تسجيل الخروج",
         "cse": "بورصة الدار البيضاء", "subtitle": "منصة التحليل المالي وأبحاث أسهم قطاع البناء والأشغال العمومية", "badge": "🇲🇦 تركيز على السوق المغربي",
-        "dev_by": "👨‍💻 تم التطوير بواسطة **زكرياء العيدي**",
+        "dev_by": "👨‍💻 تم التطوير بواسطة",
         "tracked": "الشركات المتابعة", "avg_pe": "متوسط مكرر الربحية", "prem_stock": "السهم الأغلى", "value_stock": "أفضل قيمة (أقل P/E)", "entities": "شركات",
         "nav": "🚀 وحدات التنقل السريع",
         "ca_title": "📉 تحليل الشركات", "ca_desc": "رفع نماذج الإكسل، تحليل التغيرات، واستخراج تقارير الاستثمار.",
@@ -318,8 +318,14 @@ if st.session_state.user is None:
         st.image("https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2070&auto=format&fit=crop", use_container_width=True)
         st.markdown(f"## 📊 {txt['cse']}")
         st.markdown(f"<p style='color: #b3b3b3; font-size: 1.1rem; margin-bottom: 5px;'>{txt['subtitle']}</p>", unsafe_allow_html=True)
-        # --- NEW: Developer Tag under the subtitle ---
-        st.markdown(f"<p style='color: #1f77b4; font-size: 0.95rem; font-weight: bold;'>{txt['dev_by']}</p>", unsafe_allow_html=True)
+        
+        # --- NEW: Premium Developer Badge ---
+        st.markdown(f"""
+        <div style='display: inline-block; margin-top: 15px; margin-bottom: 20px; padding: 8px 18px; background: linear-gradient(90deg, rgba(22,26,34,0.8) 0%, rgba(245,176,65,0.15) 100%); border-left: 4px solid #f5b041; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);'>
+            <span style='color: #a0aab5; font-size: 0.95rem; font-weight: 500; letter-spacing: 0.5px;'>{txt['dev_by']} </span>
+            <span style='color: #f5b041; font-size: 1.05rem; font-weight: 900; letter-spacing: 1px;'>ZAKARIA ELAIDI</span>
+        </div>
+        """, unsafe_allow_html=True)
         
     with col_auth:
         with st.container(border=True):
